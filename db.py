@@ -6,15 +6,18 @@ MONGO_URI = os.environ.get("MONGO_URI","mongodb+srv://USER:PASS@cluster.mongodb.
 
 class DB:
     def __init__(self):
-        self.client=self.users=self.usage=self.questions=self.settings=None
+        self.client=self.users=self.usage=self.questions=self.notes=self.reminders=None
 
     async def connect(self):
         self.client=AsyncIOMotorClient(MONGO_URI,serverSelectionTimeoutMS=8000)
         d=self.client["studybot"]
         self.users=d["users"]; self.usage=d["usage"]
-        self.questions=d["questions"]; self.settings=d["settings"]
+        self.questions=d["questions"]; self.notes=d["notes"]
+        self.reminders=d["reminders"]
         await self.users.create_index("user_id",unique=True)
         await self.usage.create_index([("user_id",1),("date",1)])
+        await self.notes.create_index([("user_id",1),("ts",-1)])
+        await self.reminders.create_index([("user_id",1),("remind_at",1)])
         print("✅ MongoDB connected!")
 
     async def add_user(self,uid,name,username=None,ref_by=None):
@@ -30,6 +33,7 @@ class DB:
                 "ref_by":ref_by,"ref_count":0,
                 "notify_morning":True,"notify_exam":True,
                 "exam_date":None,"exam_name":None,
+                "lang":"hi",
                 "joined":datetime.now().isoformat(),
             })
             if ref_by:
@@ -47,12 +51,14 @@ class DB:
         new_s=user.get("streak",0)+1 if last==yesterday else 1
         max_s=max(new_s,user.get("max_streak",0))
         await self.users.update_one({"user_id":uid},{"$set":{"last_active":today,"streak":new_s,"max_streak":max_s}})
-        await self._check_streak_badges(uid,new_s)
+        badge=await self._check_streak_badges(uid,new_s)
+        return badge
 
     async def _check_streak_badges(self,uid,streak):
-        bmap={3:"🔥 3-Day Streak",7:"⭐ Week Warrior",14:"💪 Fortnight Hero",30:"🏆 Monthly Master",100:"👑 Legend"}
+        bmap={3:"🔥 3-Day",7:"⭐ Week Warrior",14:"💪 Fortnight",30:"🏆 Monthly",100:"👑 Legend"}
         if streak in bmap:
-            await self.users.update_one({"user_id":uid},{"$addToSet":{"badges":bmap[streak]},"$inc":{"points":streak*10}})
+            await self.users.update_one({"user_id":uid},
+                {"$addToSet":{"badges":bmap[streak]},"$inc":{"points":streak*10}})
             return bmap[streak]
         return None
 
@@ -72,21 +78,26 @@ class DB:
     async def update_settings(self,uid,**kwargs):
         await self.users.update_one({"user_id":uid},{"$set":kwargs})
 
+    async def set_lang(self,uid,lang):
+        await self.users.update_one({"user_id":uid},{"$set":{"lang":lang}})
+
+    async def get_lang(self,uid):
+        u=await self.users.find_one({"user_id":uid},{"lang":1})
+        return u.get("lang","hi") if u else "hi"
+
     async def is_blocked(self,uid):
         u=await self.users.find_one({"user_id":uid},{"is_blocked":1})
         return bool(u and u.get("is_blocked"))
 
-    async def block_user(self,uid):
-        await self.users.update_one({"user_id":uid},{"$set":{"is_blocked":True}})
-
-    async def unblock_user(self,uid):
-        await self.users.update_one({"user_id":uid},{"$set":{"is_blocked":False}})
+    async def block_user(self,uid): await self.users.update_one({"user_id":uid},{"$set":{"is_blocked":True}})
+    async def unblock_user(self,uid): await self.users.update_one({"user_id":uid},{"$set":{"is_blocked":False}})
 
     async def all_users(self):
         return await self.users.find({"is_blocked":False},{"user_id":1}).to_list(None)
 
     async def morning_notify_users(self):
-        return await self.users.find({"is_blocked":False,"notify_morning":True},{"user_id":1,"name":1,"streak":1}).to_list(None)
+        return await self.users.find({"is_blocked":False,"notify_morning":True},
+            {"user_id":1,"name":1,"streak":1}).to_list(None)
 
     async def stats(self):
         return {
@@ -94,6 +105,7 @@ class DB:
             "premium":await self.users.count_documents({"is_premium":True}),
             "blocked":await self.users.count_documents({"is_blocked":True}),
             "questions":await self.questions.count_documents({}),
+            "notes":await self.notes.count_documents({}),
             "active_today":await self.users.count_documents({"last_active":date.today().isoformat()}),
         }
 
@@ -128,13 +140,15 @@ class DB:
             await self.users.update_one({"user_id":uid},{"$inc":{"total_q":1,"points":2}})
 
     async def save_q(self,uid,question,answer):
-        await self.questions.insert_one({"user_id":uid,"question":question,"answer":answer,"ts":datetime.now().isoformat()})
+        await self.questions.insert_one({"user_id":uid,"question":question,
+            "answer":answer,"ts":datetime.now().isoformat()})
 
     async def add_points(self,uid,pts):
         await self.users.update_one({"user_id":uid},{"$inc":{"points":pts}})
 
     async def get_leaderboard(self,limit=10):
-        cursor=self.users.find({"is_blocked":False},{"user_id":1,"name":1,"points":1,"streak":1,"badges":1}).sort("points",-1).limit(limit)
+        cursor=self.users.find({"is_blocked":False},
+            {"user_id":1,"name":1,"points":1,"streak":1,"badges":1}).sort("points",-1).limit(limit)
         return await cursor.to_list(None)
 
     async def get_rank(self,uid):
@@ -150,9 +164,48 @@ class DB:
         results=[]
         for days_ahead in [30,7,1]:
             target=(date.today()+timedelta(days=days_ahead)).isoformat()
-            cursor=self.users.find({"exam_date":target,"is_blocked":False,"notify_exam":True},{"user_id":1,"exam_name":1})
+            cursor=self.users.find({"exam_date":target,"is_blocked":False,"notify_exam":True},
+                {"user_id":1,"exam_name":1})
             users=await cursor.to_list(None)
             for u in users: u["days_left"]=days_ahead; results.append(u)
         return results
+
+    # ── Notes System ──────────────────────────────────────────────────────────
+    async def save_note(self,uid,title,content,subject="general"):
+        note_id=f"note_{uid}_{int(datetime.now().timestamp())}"
+        await self.notes.insert_one({
+            "note_id":note_id,"user_id":uid,"title":title,
+            "content":content,"subject":subject,
+            "ts":datetime.now().isoformat()
+        })
+        return note_id
+
+    async def get_notes(self,uid,limit=10):
+        cursor=self.notes.find({"user_id":uid}).sort("ts",-1).limit(limit)
+        return await cursor.to_list(None)
+
+    async def delete_note(self,uid,note_id):
+        await self.notes.delete_one({"note_id":note_id,"user_id":uid})
+
+    # ── Reminders ────────────────────────────────────────────────────────────
+    async def add_reminder(self,uid,text,remind_at):
+        await self.reminders.insert_one({
+            "user_id":uid,"text":text,
+            "remind_at":remind_at,"done":False,
+            "created":datetime.now().isoformat()
+        })
+
+    async def get_due_reminders(self):
+        now=datetime.now().isoformat()
+        cursor=self.reminders.find({"remind_at":{"$lte":now},"done":False})
+        return await cursor.to_list(None)
+
+    async def mark_reminder_done(self,rem_id):
+        from bson import ObjectId
+        await self.reminders.update_one({"_id":ObjectId(rem_id)},{"$set":{"done":True}})
+
+    async def get_user_reminders(self,uid):
+        cursor=self.reminders.find({"user_id":uid,"done":False}).sort("remind_at",1)
+        return await cursor.to_list(None)
 
 db=DB()
