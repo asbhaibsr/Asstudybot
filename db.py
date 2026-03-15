@@ -2,7 +2,14 @@ import os
 from datetime import datetime, date, timedelta
 from motor.motor_asyncio import AsyncIOMotorClient
 
-MONGO_URI = os.environ.get("MONGO_URI", "mongodb+srv://USER:PASS@cluster.mongodb.net/studybot")
+# ══════════════════════════════════════════════════════════════
+# ⚠️  MONGO_URI YAHAN DAALO ya Koyeb Environment mein set karo
+# Format: mongodb+srv://USERNAME:PASSWORD@cluster.mongodb.net/studybot
+# ══════════════════════════════════════════════════════════════
+MONGO_URI = os.environ.get(
+    "MONGO_URI",
+    "mongodb+srv://USERNAME:PASSWORD@cluster0.xxxxx.mongodb.net/studybot?retryWrites=true&w=majority"
+)
 
 class DB:
     def __init__(self):
