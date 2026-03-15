@@ -25,7 +25,7 @@ KOYEB_URL = os.environ.get(
 MINI_APP = f"{KOYEB_URL}/app"
 # ══════════════════════════════════════════════════════════════
 
-flask_app = Flask(__name__, static_folder="static")
+flask_app = Flask(__name__, static_folder="app")
 
 @flask_app.route("/")
 def home():
@@ -38,11 +38,11 @@ def health():
 @flask_app.route("/app")
 @flask_app.route("/app/")
 def mini_app():
-    return send_from_directory("static", "index.html")
+    return send_from_directory("app", "index.html")
 
-@flask_app.route("/static/<path:filename>")
+@flask_app.route("/app-static/<path:filename>")
 def static_files(filename):
-    return send_from_directory("static", filename)
+    return send_from_directory("app", filename)
 
 def run_flask():
     log.info(f"Flask on :{PORT} | App: {MINI_APP}")
