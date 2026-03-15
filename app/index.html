@@ -3,270 +3,236 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>📚 Study Bot App</title>
+<title>IndiaStudyAI</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-:root{--p:#6c63ff;--pd:#5a52d5;--g:#00c853;--r:#f44336;--o:#ff6d00;
-  --y:#ffc107;--bg:#f0f2ff;--card:#fff;--txt:#1a1a2e;--sub:#6b7280;--brd:#e5e7eb}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);
-  color:var(--txt);min-height:100vh;padding-bottom:68px}
-
-/* Header */
-.hdr{background:linear-gradient(135deg,#6c63ff,#a855f7);color:#fff;
-  padding:14px 16px;position:sticky;top:0;z-index:200;
-  box-shadow:0 2px 16px #6c63ff44}
-.hdr h1{font-size:17px;font-weight:700}
-.hdr p{font-size:11px;opacity:.8;margin-top:1px}
-
-/* Search */
-.srch-wrap{padding:8px 12px;background:#fff;border-bottom:1px solid var(--brd);
-  position:sticky;top:52px;z-index:199}
-.srch-wrap input{width:100%;padding:8px 12px 8px 34px;border:2px solid var(--brd);
-  border-radius:20px;font-size:13px;outline:none;background:var(--bg);transition:.2s}
-.srch-wrap input:focus{border-color:var(--p);background:#fff}
-.srch-icon{position:absolute;left:22px;top:50%;transform:translateY(-50%);
-  color:var(--sub);font-size:14px;pointer-events:none}
-
-/* Tabs */
-.tabs{display:flex;background:#fff;border-bottom:2px solid var(--brd);
-  overflow-x:auto;scrollbar-width:none;position:sticky;top:101px;z-index:198}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;font-family:'Segoe UI',system-ui,sans-serif}
+:root{--p:#6c63ff;--pd:#4f46e5;--g:#10b981;--r:#ef4444;--o:#f59e0b;--bg:#0f0f1a;--card:#1a1a2e;--card2:#16213e;--txt:#e2e8f0;--sub:#94a3b8;--brd:#2d2d44;--glow:#6c63ff44}
+body{background:var(--bg);color:var(--txt);min-height:100vh;padding-bottom:65px;overflow-x:hidden}
+.hdr{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:300;border-bottom:1px solid var(--brd)}
+.hdr h1{font-size:16px;font-weight:800;background:linear-gradient(135deg,#6c63ff,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hdr p{font-size:10px;color:var(--sub);margin-top:1px}
+.srch-btn{width:36px;height:36px;background:var(--card2);border:1px solid var(--brd);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:.2s}
+.srch-btn:active{transform:scale(.9)}
+.srch-overlay{position:fixed;inset:0;background:#000c;z-index:500;display:none;align-items:flex-start;padding-top:60px}
+.srch-overlay.on{display:flex}
+.srch-box{width:90%;max-width:400px;margin:0 auto;background:var(--card);border-radius:16px;padding:14px;border:1px solid var(--brd)}
+.srch-box input{width:100%;background:var(--card2);border:1px solid var(--brd);border-radius:10px;padding:10px 14px;color:var(--txt);font-size:14px;outline:none}
+.srch-box input::placeholder{color:var(--sub)}
+.srch-results{margin-top:10px;max-height:300px;overflow-y:auto}
+.srch-item{padding:10px 12px;border-radius:10px;cursor:pointer;font-size:13px;transition:.15s;border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:8px}
+.srch-item:hover{background:var(--card2)}
+.tabs{display:flex;background:var(--card);border-bottom:1px solid var(--brd);overflow-x:auto;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
-.tab{flex-shrink:0;padding:9px 13px;cursor:pointer;font-size:12px;
-  color:var(--sub);border-bottom:3px solid transparent;font-weight:500;
-  white-space:nowrap;transition:.15s}
-.tab.on{color:var(--p);border-bottom-color:var(--p);font-weight:700}
-
-/* Pages */
+.tab{flex-shrink:0;padding:9px 13px;cursor:pointer;font-size:11px;color:var(--sub);border-bottom:2px solid transparent;font-weight:600;white-space:nowrap;transition:.15s}
+.tab.on{color:var(--p);border-bottom-color:var(--p)}
 .pg{display:none;padding:12px}.pg.on{display:block}
-
-/* Grid */
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-
-/* Cards */
-.scard{background:var(--card);border-radius:14px;padding:14px 10px;text-align:center;
-  cursor:pointer;box-shadow:0 2px 8px #0000000d;border:2px solid transparent;transition:.2s}
-.scard:active,.scard.on{transform:translateY(-2px);border-color:var(--p);
-  box-shadow:0 4px 16px #6c63ff22}
-.scard .si{font-size:28px;margin-bottom:6px}
-.scard .sn{font-size:12px;font-weight:700;color:var(--txt)}
-.scard .sc{font-size:10px;color:var(--sub);margin-top:2px}
-
-.lcard{background:var(--card);border-radius:12px;padding:12px;margin-bottom:8px;
-  cursor:pointer;display:flex;align-items:center;gap:10px;
-  box-shadow:0 1px 6px #00000009;border:2px solid transparent;transition:.2s}
-.lcard:active{border-color:var(--p)}
-.lcard .li{font-size:22px;width:40px;height:40px;display:flex;align-items:center;
-  justify-content:center;background:var(--bg);border-radius:10px;flex-shrink:0}
-.lcard .lt{font-size:13px;font-weight:600;margin-bottom:2px}
-.lcard .ld{font-size:11px;color:var(--sub)}
-.lcard .lb{font-size:10px;padding:2px 8px;border-radius:20px;
-  background:#ede9fe;color:var(--p);flex-shrink:0;font-weight:600}
-
-/* Content */
-.content-box{background:var(--card);border-radius:14px;padding:16px;margin-top:4px}
-.content-box h2{font-size:16px;color:var(--p);margin-bottom:10px;font-weight:700}
-.content-body{font-size:13px;line-height:1.75;color:#444}
-.content-body h3{color:var(--txt);margin:12px 0 5px;font-size:14px;font-weight:700}
-.content-body p{margin-bottom:8px}
-.content-body ul{padding-left:16px;margin-bottom:8px}
-.content-body li{margin-bottom:4px}
-.content-body strong{color:var(--p)}
-.example-box{background:#f5f3ff;border-left:3px solid var(--p);
-  padding:8px 12px;border-radius:0 8px 8px 0;margin:8px 0;font-size:12px;
-  font-family:monospace;line-height:1.6}
-
-/* Buttons */
-.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 16px;
-  border-radius:20px;cursor:pointer;font-size:12px;font-weight:600;
-  border:none;transition:.15s;text-decoration:none}
-.btn-p{background:var(--p);color:#fff}.btn-p:active{background:var(--pd)}
-.btn-s{background:var(--bg);color:var(--p);border:2px solid var(--p)}
-
-/* Quiz */
-.quiz-box{background:var(--bg);border-radius:12px;padding:14px;margin-top:14px}
-.quiz-box h3{font-size:14px;font-weight:700;margin-bottom:10px}
-.qopt{background:#fff;border:2px solid var(--brd);border-radius:10px;
-  padding:9px 12px;margin-bottom:6px;cursor:pointer;font-size:12px;transition:.15s}
-.qopt:hover{border-color:var(--p)}
-.qopt.ok{border-color:var(--g)!important;background:#e8f5e9;color:#1b5e20;font-weight:600}
-.qopt.no{border-color:var(--r)!important;background:#ffebee;color:#b71c1c}
-.qopt.done{pointer-events:none}
-
-/* AI Chat */
-.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 180px);min-height:360px}
-.chat-msgs{flex:1;overflow-y:auto;padding:8px 2px;display:flex;flex-direction:column;gap:7px}
-.msg{padding:9px 12px;border-radius:13px;max-width:87%;font-size:12px;
-  line-height:1.6;word-break:break-word}
-.msg.u{background:var(--p);color:#fff;align-self:flex-end;border-bottom-right-radius:3px}
-.msg.b{background:#fff;color:var(--txt);box-shadow:0 1px 4px #0000000e;
-  align-self:flex-start;border-bottom-left-radius:3px}
-.msg.typing{color:var(--sub);font-style:italic;background:#f3f4f6}
-.chat-in{display:flex;gap:7px;padding:8px 0 0;border-top:1px solid var(--brd)}
-.chat-in input{flex:1;padding:9px 12px;border:2px solid var(--brd);
-  border-radius:20px;font-size:12px;outline:none}
+.welcome{background:linear-gradient(135deg,var(--p),#a855f7);border-radius:14px;padding:14px 16px;margin-bottom:14px;overflow:hidden;position:relative}
+.welcome::after{content:'🎓';position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:36px;opacity:.3}
+.welcome h2{font-size:15px;font-weight:700;margin-bottom:3px}
+.welcome p{font-size:11px;opacity:.85}
+.sec-title{font-size:10px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.scard{background:var(--card);border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;border:1px solid var(--brd);transition:.2s}
+.scard:active{transform:scale(.95);border-color:var(--p);background:var(--card2)}
+.scard .si{font-size:26px;margin-bottom:5px}
+.scard .sn{font-size:11px;font-weight:700}
+.scard .sc{font-size:9px;color:var(--sub);margin-top:2px}
+.lcard{background:var(--card);border-radius:11px;padding:11px 12px;margin-bottom:7px;cursor:pointer;display:flex;align-items:center;gap:10px;border:1px solid var(--brd);transition:.15s}
+.lcard:active{border-color:var(--p);background:var(--card2)}
+.lcard .li{font-size:20px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;background:var(--card2);border-radius:9px;flex-shrink:0}
+.lcard .lt{font-size:12px;font-weight:600;margin-bottom:1px}
+.lcard .ld{font-size:10px;color:var(--sub)}
+.lcard .la{font-size:9px;padding:2px 7px;border-radius:10px;background:#6c63ff22;color:var(--p);font-weight:600;flex-shrink:0}
+.cbox{background:var(--card);border-radius:14px;padding:16px;border:1px solid var(--brd)}
+.cbox h2{font-size:15px;color:var(--p);margin-bottom:10px;font-weight:700}
+.cbody{font-size:13px;line-height:1.75;color:#cbd5e1}
+.cbody h3{color:var(--txt);margin:12px 0 5px;font-size:13px;font-weight:700}
+.cbody p{margin-bottom:8px}
+.cbody ul{padding-left:16px;margin-bottom:8px}
+.cbody li{margin-bottom:4px}
+.cbody strong{color:#a78bfa}
+.ex{background:var(--card2);border-left:3px solid var(--p);padding:8px 12px;border-radius:0 8px 8px 0;margin:8px 0;font-size:12px;font-family:monospace;line-height:1.6;color:#94a3b8}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:9px 16px;border-radius:10px;cursor:pointer;font-size:12px;font-weight:600;border:none;transition:.15s;text-decoration:none}
+.btn:active{transform:scale(.95)}
+.btn-p{background:linear-gradient(135deg,var(--p),#a855f7);color:#fff}
+.btn-s{background:var(--card2);color:var(--p);border:1px solid var(--p)}
+.btn-g{background:var(--g);color:#fff}
+.btn-sm{padding:7px 12px;font-size:11px}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.tag{padding:5px 11px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;transition:.15s;border:1px solid var(--brd)}
+.tag.on{background:var(--p);color:#fff;border-color:var(--p)}
+.tag:not(.on){background:var(--card);color:var(--sub)}
+.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 210px);min-height:340px}
+.chat-msgs{flex:1;overflow-y:auto;padding:6px 0;display:flex;flex-direction:column;gap:6px;scrollbar-width:thin;scrollbar-color:var(--brd) transparent}
+.msg{padding:9px 12px;border-radius:13px;max-width:87%;font-size:12px;line-height:1.6;word-break:break-word}
+.msg.u{background:linear-gradient(135deg,var(--p),#a855f7);color:#fff;align-self:flex-end;border-bottom-right-radius:3px}
+.msg.b{background:var(--card);color:var(--txt);border:1px solid var(--brd);align-self:flex-start;border-bottom-left-radius:3px}
+.msg.typing{color:var(--sub);font-style:italic;background:var(--card2);border:1px solid var(--brd)}
+.lang-row{display:flex;gap:6px;margin-bottom:8px}
+.lbtn{padding:5px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--brd);background:var(--card);color:var(--sub);transition:.15s}
+.lbtn.on{background:var(--p);color:#fff;border-color:var(--p)}
+.chat-in{display:flex;gap:7px;padding:8px 0 0;border-top:1px solid var(--brd);margin-top:6px}
+.chat-in input{flex:1;background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:9px 12px;color:var(--txt);font-size:12px;outline:none}
 .chat-in input:focus{border-color:var(--p)}
-.chat-in button{background:var(--p);color:#fff;border:none;
-  padding:9px 14px;border-radius:20px;cursor:pointer;font-size:14px}
-
-/* News card */
-.ncard{background:var(--card);border-radius:12px;padding:12px;margin-bottom:8px;
-  box-shadow:0 1px 5px #00000009;border-left:3px solid var(--p)}
-.ncard .nt{font-size:13px;font-weight:600;margin-bottom:4px;line-height:1.4}
-.ncard .nm{font-size:11px;color:var(--sub)}
-.ncard a{color:var(--p);font-size:11px;font-weight:600}
-
-/* Flashcard */
-.flashcard{background:linear-gradient(135deg,var(--p),#a855f7);color:#fff;
-  border-radius:16px;padding:24px 20px;text-align:center;
-  min-height:160px;display:flex;flex-direction:column;
-  justify-content:center;cursor:pointer;margin-bottom:12px;
-  box-shadow:0 4px 16px #6c63ff44;transition:.3s}
-.flashcard .fq{font-size:15px;font-weight:700;margin-bottom:8px}
-.flashcard .fhint{font-size:11px;opacity:.75}
-.flashcard.flipped{background:linear-gradient(135deg,#00c853,#00897b)}
-.flashcard .fa{font-size:14px;line-height:1.6}
-
-/* Pomodoro */
-.pomo-circle{width:160px;height:160px;border-radius:50%;
-  border:8px solid var(--p);display:flex;flex-direction:column;
-  align-items:center;justify-content:center;margin:20px auto;
-  background:#fff;box-shadow:0 4px 20px #6c63ff33}
-.pomo-time{font-size:36px;font-weight:700;color:var(--p)}
-.pomo-label{font-size:11px;color:var(--sub);margin-top:3px}
-
-/* Tags */
-.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
-.tag{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;transition:.15s}
-.tag.on{background:var(--p);color:#fff}.tag:not(.on){background:var(--bg);color:var(--sub)}
-
-/* Loader */
-.loader{text-align:center;padding:28px;color:var(--sub);font-size:13px}
-.spin{width:30px;height:30px;border:3px solid var(--brd);border-top-color:var(--p);
-  border-radius:50%;animation:sp .7s linear infinite;margin:0 auto 10px}
+.chat-in button{background:linear-gradient(135deg,var(--p),#a855f7);color:#fff;border:none;padding:9px 14px;border-radius:10px;cursor:pointer;font-size:14px}
+.qcard{background:var(--card);border-radius:14px;padding:16px;border:1px solid var(--brd)}
+.qprog{height:4px;background:var(--brd);border-radius:2px;margin-bottom:14px;overflow:hidden}
+.qprog-bar{height:100%;background:linear-gradient(90deg,var(--p),#a855f7);transition:.3s}
+.qtext{font-size:13px;font-weight:600;margin-bottom:12px;line-height:1.5}
+.qopt{background:var(--card2);border:1.5px solid var(--brd);border-radius:10px;padding:10px 12px;margin-bottom:7px;cursor:pointer;font-size:12px;color:var(--txt);transition:.15s;display:flex;align-items:center;gap:8px}
+.qopt:active{border-color:var(--p)}
+.qopt.ok{border-color:var(--g)!important;background:#10b98122;color:#6ee7b7;font-weight:600}
+.qopt.no{border-color:var(--r)!important;background:#ef444422;color:#fca5a5}
+.qopt.done{pointer-events:none}
+.qletter{width:24px;height:24px;border-radius:6px;background:var(--brd);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.fc{background:linear-gradient(135deg,var(--p),#a855f7);border-radius:16px;padding:24px;text-align:center;min-height:155px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;margin-bottom:10px;box-shadow:0 8px 24px var(--glow)}
+.fc.flipped{background:linear-gradient(135deg,var(--g),#059669)}
+.fc .fq{font-size:14px;font-weight:700;margin-bottom:6px}
+.fc .fhint{font-size:10px;opacity:.7}
+.fc .fa{font-size:12px;line-height:1.6}
+.pomo-ring{width:155px;height:155px;margin:0 auto 14px;position:relative}
+.pomo-ring svg{transform:rotate(-90deg)}
+.pomo-ring circle{fill:none;stroke-width:8}
+.pomo-bg{stroke:var(--brd)}.pomo-fg{stroke:var(--p);stroke-linecap:round;transition:stroke-dashoffset .5s}
+.pomo-ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.pomo-t{font-size:30px;font-weight:800;color:var(--txt)}.pomo-m{font-size:10px;color:var(--sub);margin-top:2px}
+.ncard{background:var(--card);border-radius:11px;padding:12px;margin-bottom:8px;border-left:3px solid var(--p);border:1px solid var(--brd)}
+.ncard .nt{font-size:12px;font-weight:600;margin-bottom:4px;line-height:1.4}
+.ncard .nd{font-size:10px;color:var(--sub)}
+.ncard a{color:var(--p);font-size:10px;font-weight:600;text-decoration:none}
+.loader{text-align:center;padding:24px;color:var(--sub);font-size:12px}
+.spin{width:28px;height:28px;border:3px solid var(--brd);border-top-color:var(--p);border-radius:50%;animation:sp .7s linear infinite;margin:0 auto 8px}
 @keyframes sp{to{transform:rotate(360deg)}}
-.empty{text-align:center;padding:36px 16px;color:var(--sub)}
-.empty .ei{font-size:40px;margin-bottom:10px}
-
-/* Stats bar */
-.stat-bar{display:flex;gap:8px;margin-bottom:12px}
-.stat-item{flex:1;background:var(--card);border-radius:10px;padding:10px;
-  text-align:center;box-shadow:0 1px 4px #0000000a}
-.stat-num{font-size:18px;font-weight:700;color:var(--p)}
-.stat-lbl{font-size:10px;color:var(--sub);margin-top:2px}
-
-/* Bottom nav */
-.bnav{position:fixed;bottom:0;left:0;right:0;background:#fff;
-  border-top:1px solid var(--brd);display:flex;z-index:300;
-  box-shadow:0 -2px 10px #00000010}
-.bni{flex:1;padding:7px 2px 5px;text-align:center;cursor:pointer;
-  font-size:10px;color:var(--sub);font-weight:500;transition:.15s}
-.bni .bi{font-size:20px;display:block;margin-bottom:1px}
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--brd);display:flex;z-index:300}
+.bni{flex:1;padding:7px 2px 5px;text-align:center;cursor:pointer;font-size:9px;color:var(--sub);font-weight:600;transition:.15s}
+.bni .bi{font-size:18px;display:block;margin-bottom:1px}
 .bni.on{color:var(--p)}
+.back-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 </style>
 </head>
 <body>
-
 <div class="hdr">
-  <h1>📚 Study Bot App</h1>
-  <p id="hdrSub">Free padhai • Sarkari updates • AI Tutor</p>
+  <div><h1>📚 IndiaStudyAI</h1><p id="hdrSub">Namaste! Padhai shuru karo 🎓</p></div>
+  <div class="srch-btn" onclick="openSearch()">🔍</div>
 </div>
-
-<div class="srch-wrap" style="position:relative">
-  <span class="srch-icon">🔍</span>
-  <input id="srchIn" placeholder="Subjects, topics dhundho..." oninput="onSearch(this.value)">
+<div class="srch-overlay" id="srchOverlay" onclick="if(event.target===this)closeSearch()">
+  <div class="srch-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <span style="font-size:13px;font-weight:700">🔍 Topic Dhundho</span>
+      <span style="cursor:pointer;color:var(--sub);font-size:18px" onclick="closeSearch()">✕</span>
+    </div>
+    <input id="srchIn" placeholder="Math, Science, History..." oninput="doSearch(this.value)">
+    <div class="srch-results" id="srchRes"></div>
+  </div>
 </div>
-
-<div class="tabs" id="tabsBar">
+<div class="tabs">
   <div class="tab on"  onclick="goTab('study',0)">📚 Study</div>
-  <div class="tab"     onclick="goTab('quiz',1)">🎯 Quiz</div>
-  <div class="tab"     onclick="goTab('flash',2)">🃏 Flash Cards</div>
-  <div class="tab"     onclick="goTab('updates',3)">📢 Updates</div>
-  <div class="tab"     onclick="goTab('news',4)">📰 News</div>
-  <div class="tab"     onclick="goTab('ai',5)">🤖 AI Tutor</div>
+  <div class="tab"     onclick="goTab('ai',1)">🤖 AI</div>
+  <div class="tab"     onclick="goTab('quiz',2)">🎯 Quiz</div>
+  <div class="tab"     onclick="goTab('flash',3)">🃏 Cards</div>
+  <div class="tab"     onclick="goTab('updates',4)">📢 Updates</div>
+  <div class="tab"     onclick="goTab('news',5)">📰 News</div>
   <div class="tab"     onclick="goTab('tools',6)">🛠️ Tools</div>
 </div>
 
-<!-- ══ STUDY ══════════════════════════════════════════════════════════════ -->
 <div class="pg on" id="pg-study">
-  <div id="studyGrid" class="grid2">
-    <div class="scard" onclick="openSub('math')"><div class="si">➕</div><div class="sn">Mathematics</div><div class="sc">NCERT + AI</div></div>
-    <div class="scard" onclick="openSub('science')"><div class="si">🔬</div><div class="sn">Science</div><div class="sc">Khan Academy</div></div>
-    <div class="scard" onclick="openSub('hindi')"><div class="si">🇮🇳</div><div class="sn">Hindi</div><div class="sc">Wikipedia</div></div>
-    <div class="scard" onclick="openSub('english')"><div class="si">🔤</div><div class="sn">English</div><div class="sc">Free resources</div></div>
-    <div class="scard" onclick="openSub('physics')"><div class="si">⚛️</div><div class="sn">Physics</div><div class="sc">NCERT notes</div></div>
-    <div class="scard" onclick="openSub('chemistry')"><div class="si">🧪</div><div class="sn">Chemistry</div><div class="sc">Wikipedia</div></div>
-    <div class="scard" onclick="openSub('bio')"><div class="si">🧬</div><div class="sn">Biology</div><div class="sc">Wikipedia</div></div>
-    <div class="scard" onclick="openSub('history')"><div class="si">🌍</div><div class="sn">History/SST</div><div class="sc">Wikipedia</div></div>
-    <div class="scard" onclick="openSub('computer')"><div class="si">💻</div><div class="sn">Computer</div><div class="sc">Free tutorials</div></div>
-    <div class="scard" onclick="openSub('gk')"><div class="si">🧠</div><div class="sn">GK</div><div class="sc">Open Trivia</div></div>
-  </div>
-  <!-- Lesson list view -->
-  <div id="lessonView" style="display:none">
-    <button class="btn btn-s" onclick="backToGrid()" style="margin-bottom:10px">← Wapas</button>
-    <div id="lessonTitle" style="font-size:14px;font-weight:700;color:var(--sub);margin-bottom:10px"></div>
-    <div id="lessonList"></div>
-  </div>
-  <!-- Content view -->
-  <div id="contentView" style="display:none">
-    <button class="btn btn-s" onclick="backToLessons()" style="margin-bottom:10px">← Wapas</button>
-    <div id="contentBox"></div>
-  </div>
-</div>
-
-<!-- ══ QUIZ ═══════════════════════════════════════════════════════════════ -->
-<div class="pg" id="pg-quiz">
-  <div id="quizStats" class="stat-bar">
-    <div class="stat-item"><div class="stat-num" id="qToday">0</div><div class="stat-lbl">Aaj ke quiz</div></div>
-    <div class="stat-item"><div class="stat-num" id="qScore">0%</div><div class="stat-lbl">Accuracy</div></div>
-    <div class="stat-item"><div class="stat-num" id="qStreak">0</div><div class="stat-lbl">Streak</div></div>
-  </div>
-  <div id="quizHome">
-    <p style="font-size:12px;color:var(--sub);margin-bottom:10px">Subject choose karo — Questions API se aate hain!</p>
-    <div class="grid2">
-      <div class="scard" onclick="startQuiz('science',9)"><div class="si">🔬</div><div class="sn">Science</div><div class="sc">Open Trivia</div></div>
-      <div class="scard" onclick="startQuiz('general',9)"><div class="si">🧠</div><div class="sn">General GK</div><div class="sc">Open Trivia</div></div>
-      <div class="scard" onclick="startQuiz('computers',18)"><div class="si">💻</div><div class="sn">Computer</div><div class="sc">Open Trivia</div></div>
-      <div class="scard" onclick="startQuiz('history',23)"><div class="si">🌍</div><div class="sn">History</div><div class="sc">Open Trivia</div></div>
-      <div class="scard" onclick="startQuiz('geography',22)"><div class="si">🗺️</div><div class="sn">Geography</div><div class="sc">Open Trivia</div></div>
-      <div class="scard" onclick="startQuiz('math',19)"><div class="si">➕</div><div class="sn">Mathematics</div><div class="sc">Open Trivia</div></div>
+  <div id="sHome">
+    <div class="welcome"><h2 id="wTitle">🙏 Namaste!</h2><p id="wText">Subject choose karo aur padhai shuru karo</p></div>
+    <div class="sec-title">Subjects</div>
+    <div class="grid2" id="subGrid">
+      <div class="scard" onclick="openSub('math')"><div class="si">➕</div><div class="sn">Mathematics</div><div class="sc">NCERT+AI</div></div>
+      <div class="scard" onclick="openSub('science')"><div class="si">🔬</div><div class="sn">Science</div><div class="sc">Wiki+AI</div></div>
+      <div class="scard" onclick="openSub('hindi')"><div class="si">🇮🇳</div><div class="sn">Hindi</div><div class="sc">Vyakaran</div></div>
+      <div class="scard" onclick="openSub('english')"><div class="si">🔤</div><div class="sn">English</div><div class="sc">Grammar</div></div>
+      <div class="scard" onclick="openSub('physics')"><div class="si">⚛️</div><div class="sn">Physics</div><div class="sc">Formulas</div></div>
+      <div class="scard" onclick="openSub('chemistry')"><div class="si">🧪</div><div class="sn">Chemistry</div><div class="sc">Reactions</div></div>
+      <div class="scard" onclick="openSub('bio')"><div class="si">🧬</div><div class="sn">Biology</div><div class="sc">Life Sci</div></div>
+      <div class="scard" onclick="openSub('history')"><div class="si">🌍</div><div class="sn">History/SST</div><div class="sc">India+World</div></div>
+      <div class="scard" onclick="openSub('computer')"><div class="si">💻</div><div class="sn">Computer</div><div class="sc">Coding</div></div>
+      <div class="scard" onclick="openSub('gk')"><div class="si">🧠</div><div class="sn">GK</div><div class="sc">Current 2026</div></div>
     </div>
   </div>
-  <div id="quizPlay" style="display:none">
-    <button class="btn btn-s" onclick="resetQuiz()" style="margin-bottom:10px">← Wapas</button>
-    <div id="quizContent"></div>
+  <div id="lessonV" style="display:none">
+    <div class="back-row"><button class="btn btn-s btn-sm" onclick="backGrid()">← Wapas</button><span id="lessonT" style="font-size:13px;font-weight:700"></span></div>
+    <div id="lessonL"></div>
+  </div>
+  <div id="contentV" style="display:none">
+    <div class="back-row"><button class="btn btn-s btn-sm" onclick="backLessons()">← Wapas</button></div>
+    <div id="contentB"></div>
   </div>
 </div>
 
-<!-- ══ FLASHCARDS ══════════════════════════════════════════════════════════ -->
+<div class="pg" id="pg-ai">
+  <div style="background:#6c63ff22;border-radius:12px;padding:10px 12px;margin-bottom:10px;border:1px solid #6c63ff44">
+    <div style="font-size:12px;font-weight:700;margin-bottom:3px">🤖 AI Study Tutor</div>
+    <div style="font-size:11px;color:var(--sub)">Math, Science, Hindi, GK, Career — sab poochho! Sirf padhai ke topics.</div>
+  </div>
+  <div class="lang-row">
+    <div class="lbtn on" id="lHi" onclick="setL('hi')">🇮🇳 Hindi</div>
+    <div class="lbtn" id="lEn" onclick="setL('en')">🇬🇧 English</div>
+    <div class="lbtn" id="lMix" onclick="setL('mix')">🔀 Hinglish</div>
+  </div>
+  <div class="chat-wrap">
+    <div class="chat-msgs" id="chatMsgs">
+      <div class="msg b">🙏 Namaste! Main aapka AI Study Tutor hoon.<br><br>Kuch bhi poochho — Math ke formulas, Science ke concepts, History, ya Exam Tips! 📚</div>
+    </div>
+    <div class="chat-in">
+      <input id="aiIn" placeholder="Sawaal type karo..." onkeypress="if(event.key==='Enter')sendAI()">
+      <button onclick="sendAI()">➤</button>
+    </div>
+  </div>
+</div>
+
+<div class="pg" id="pg-quiz">
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <div style="flex:1;background:var(--card);border-radius:10px;padding:10px 8px;text-align:center;border:1px solid var(--brd)"><div style="font-size:18px;font-weight:800;color:var(--p)" id="qToday">0</div><div style="font-size:9px;color:var(--sub)">Aaj ke Quiz</div></div>
+    <div style="flex:1;background:var(--card);border-radius:10px;padding:10px 8px;text-align:center;border:1px solid var(--brd)"><div style="font-size:18px;font-weight:800;color:var(--p)" id="qAcc">-</div><div style="font-size:9px;color:var(--sub)">Accuracy</div></div>
+    <div style="flex:1;background:var(--card);border-radius:10px;padding:10px 8px;text-align:center;border:1px solid var(--brd)"><div style="font-size:18px;font-weight:800;color:var(--p)" id="qStrk">0🔥</div><div style="font-size:9px;color:var(--sub)">Streak</div></div>
+  </div>
+  <div id="qHome">
+    <div class="sec-title">Subject choose karo</div>
+    <div class="grid2">
+      <div class="scard" onclick="startQ('science',17)"><div class="si">🔬</div><div class="sn">Science</div><div class="sc">API se</div></div>
+      <div class="scard" onclick="startQ('gk',9)"><div class="si">🧠</div><div class="sn">GK</div><div class="sc">API se</div></div>
+      <div class="scard" onclick="startQ('computer',18)"><div class="si">💻</div><div class="sn">Computer</div><div class="sc">API se</div></div>
+      <div class="scard" onclick="startQ('history',23)"><div class="si">🌍</div><div class="sn">History</div><div class="sc">API se</div></div>
+      <div class="scard" onclick="startQ('geo',22)"><div class="si">🗺️</div><div class="sn">Geography</div><div class="sc">API se</div></div>
+      <div class="scard" onclick="startQ('math',19)"><div class="si">➕</div><div class="sn">Math</div><div class="sc">API se</div></div>
+    </div>
+  </div>
+  <div id="qPlay" style="display:none">
+    <button class="btn btn-s btn-sm" onclick="resetQ()" style="margin-bottom:10px">← Wapas</button>
+    <div id="qContent"></div>
+  </div>
+</div>
+
 <div class="pg" id="pg-flash">
-  <div class="tags" id="flashTags">
-    <span class="tag on" onclick="loadFlash('physics',this)">⚛️ Physics</span>
-    <span class="tag" onclick="loadFlash('chemistry',this)">🧪 Chemistry</span>
-    <span class="tag" onclick="loadFlash('biology',this)">🧬 Biology</span>
-    <span class="tag" onclick="loadFlash('history',this)">🌍 History</span>
-    <span class="tag" onclick="loadFlash('geography',this)">🗺️ Geography</span>
-    <span class="tag" onclick="loadFlash('science',this)">🔬 Science</span>
+  <div class="tags" id="fTags">
+    <span class="tag on" onclick="loadFC('physics',this)">⚛️ Physics</span>
+    <span class="tag" onclick="loadFC('chem',this)">🧪 Chemistry</span>
+    <span class="tag" onclick="loadFC('bio',this)">🧬 Bio</span>
+    <span class="tag" onclick="loadFC('history',this)">🌍 History</span>
+    <span class="tag" onclick="loadFC('math',this)">➕ Math</span>
+    <span class="tag" onclick="loadFC('gk',this)">🧠 GK</span>
   </div>
-  <div id="flashContainer"><div class="loader"><div class="spin"></div>Flashcards la raha hoon...</div></div>
-  <div style="text-align:center;margin-top:6px" id="flashNav" style="display:none"></div>
+  <div id="fcCont"><div class="loader"><div class="spin"></div>Flashcards ban rahe hain...</div></div>
+  <div style="display:flex;gap:8px;justify-content:center;margin-top:8px" id="fcNav"></div>
 </div>
 
-<!-- ══ UPDATES ══════════════════════════════════════════════════════════════ -->
 <div class="pg" id="pg-updates">
   <div class="tags">
-    <span class="tag on" onclick="loadUpdates('all',this)">🔥 Sabhi</span>
-    <span class="tag" onclick="loadUpdates('jobs',this)">💼 Jobs</span>
-    <span class="tag" onclick="loadUpdates('forms',this)">📋 Forms</span>
-    <span class="tag" onclick="loadUpdates('results',this)">📊 Results</span>
-    <span class="tag" onclick="loadUpdates('yojana',this)">🏛️ Yojana</span>
-    <span class="tag" onclick="loadUpdates('admit',this)">🪪 Admit</span>
-    <span class="tag" onclick="loadUpdates('scholar',this)">🎓 Scholar</span>
+    <span class="tag on" onclick="loadUpd('all',this)">🔥 Sabhi</span>
+    <span class="tag" onclick="loadUpd('jobs',this)">💼 Jobs</span>
+    <span class="tag" onclick="loadUpd('forms',this)">📋 Forms</span>
+    <span class="tag" onclick="loadUpd('results',this)">📊 Results</span>
+    <span class="tag" onclick="loadUpd('yojana',this)">🏛️ Yojana</span>
+    <span class="tag" onclick="loadUpd('admit',this)">🪪 Admit</span>
+    <span class="tag" onclick="loadUpd('scholar',this)">🎓 Scholar</span>
   </div>
   <div id="updCont"><div class="loader"><div class="spin"></div>Updates la raha hoon...</div></div>
 </div>
 
-<!-- ══ NEWS ════════════════════════════════════════════════════════════════ -->
 <div class="pg" id="pg-news">
   <div class="tags">
     <span class="tag on" onclick="loadNews('india',this)">🇮🇳 India</span>
@@ -274,637 +240,289 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);
     <span class="tag" onclick="loadNews('sport',this)">🏏 Sports</span>
     <span class="tag" onclick="loadNews('biz',this)">💼 Business</span>
     <span class="tag" onclick="loadNews('edu',this)">📚 Education</span>
-    <span class="tag" onclick="loadNews('tech',this)">📱 Tech</span>
   </div>
   <div id="newsCont"><div class="loader"><div class="spin"></div>News la raha hoon...</div></div>
 </div>
 
-<!-- ══ AI TUTOR ════════════════════════════════════════════════════════════ -->
-<div class="pg" id="pg-ai">
-  <div style="background:#ede9fe;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:#5b21b6">
-    🤖 <strong>AI Study Tutor</strong> — Sirf study topics! Off-topic sawaal politely refuse kiye jayenge.
-    <br>Wikipedia + Open knowledge base se answers.
-  </div>
-  <div class="chat-wrap">
-    <div class="chat-msgs" id="chatMsgs">
-      <div class="msg b">Namaste! 🙏 Main aapka Study AI Tutor hoon.<br>Math, Science, History, GK — koi bhi study sawaal poochho!</div>
-    </div>
-    <div class="chat-in">
-      <input id="aiIn" placeholder="Study sawaal poochho..." onkeypress="if(event.key==='Enter')sendAI()">
-      <button onclick="sendAI()">➤</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ TOOLS ═══════════════════════════════════════════════════════════════ -->
 <div class="pg" id="pg-tools">
-  <div class="grid2" style="margin-bottom:14px">
-    <div class="scard" onclick="showTool('pomo')"><div class="si">⏱️</div><div class="sn">Pomodoro Timer</div><div class="sc">25/5 min</div></div>
-    <div class="scard" onclick="showTool('countdown')"><div class="si">📅</div><div class="sn">Exam Countdown</div><div class="sc">Days remaining</div></div>
-    <div class="scard" onclick="showTool('links')"><div class="si">🔗</div><div class="sn">Free Resources</div><div class="sc">NCERT, Khan etc</div></div>
-    <div class="scard" onclick="showTool('formula')"><div class="si">📐</div><div class="sn">Formula Sheet</div><div class="sc">Math & Physics</div></div>
+  <div class="grid2" style="margin-bottom:12px">
+    <div class="scard" onclick="tool('pomo')"><div class="si">⏱️</div><div class="sn">Pomodoro</div><div class="sc">Focus Timer</div></div>
+    <div class="scard" onclick="tool('cd')"><div class="si">📅</div><div class="sn">Exam Countdown</div><div class="sc">Din baaki</div></div>
+    <div class="scard" onclick="tool('formula')"><div class="si">📐</div><div class="sn">Formulas</div><div class="sc">Math+Physics</div></div>
+    <div class="scard" onclick="tool('links')"><div class="si">🔗</div><div class="sn">Resources</div><div class="sc">NCERT,Khan</div></div>
+    <div class="scard" onclick="tool('notes')"><div class="si">📝</div><div class="sn">AI Notes</div><div class="sc">Topic se notes</div></div>
+    <div class="scard" onclick="tool('tutor')"><div class="si">🎓</div><div class="sn">AI Tutor</div><div class="sc">Seedha seekho</div></div>
   </div>
-  <div id="toolContent"></div>
+  <div id="toolCont"></div>
 </div>
 
-<!-- Bottom Nav -->
 <div class="bnav">
   <div class="bni on" onclick="goTab('study',0)"><span class="bi">📚</span>Study</div>
-  <div class="bni" onclick="goTab('quiz',1)"><span class="bi">🎯</span>Quiz</div>
-  <div class="bni" onclick="goTab('flash',2)"><span class="bi">🃏</span>Cards</div>
-  <div class="bni" onclick="goTab('updates',3)"><span class="bi">📢</span>Updates</div>
-  <div class="bni" onclick="goTab('news',4)"><span class="bi">📰</span>News</div>
-  <div class="bni" onclick="goTab('ai',5)"><span class="bi">🤖</span>AI</div>
+  <div class="bni" onclick="goTab('ai',1)"><span class="bi">🤖</span>AI</div>
+  <div class="bni" onclick="goTab('quiz',2)"><span class="bi">🎯</span>Quiz</div>
+  <div class="bni" onclick="goTab('flash',3)"><span class="bi">🃏</span>Cards</div>
+  <div class="bni" onclick="goTab('updates',4)"><span class="bi">📢</span>Updates</div>
+  <div class="bni" onclick="goTab('news',5)"><span class="bi">📰</span>News</div>
   <div class="bni" onclick="goTab('tools',6)"><span class="bi">🛠️</span>Tools</div>
 </div>
 
 <script>
-// ── Config ────────────────────────────────────────────────────────────────────
-const tg = window.Telegram?.WebApp;
-if (tg) { tg.ready(); tg.expand(); }
+const tg=window.Telegram?.WebApp;
+if(tg){tg.ready();tg.expand();tg.setHeaderColor('#0f0f1a');tg.setBackgroundColor('#0f0f1a');}
+const USER=tg?.initDataUnsafe?.user;
+if(USER){const n=USER.first_name||'Student';document.getElementById('hdrSub').textContent=`Namaste ${n}! 🎓`;document.getElementById('wTitle').textContent=`🙏 Namaste, ${n}!`;}
 
-// G4F Proxy — uses public free endpoint (no key needed)
-const AI_ENDPOINT = "https://api.g4f.in.net/api/chat"; // g4f public API
+const TABS=['study','ai','quiz','flash','updates','news','tools'];
+const inited=new Set();
+function goTab(name,i){
+  TABS.forEach((t,j)=>{
+    document.getElementById('pg-'+t).className='pg'+(j===i?' on':'');
+    document.querySelectorAll('.tab')[j].className='tab'+(j===i?' on':'');
+    document.querySelectorAll('.bni')[j].className='bni'+(j===i?' on':'');
+  });
+  if(!inited.has(name)){inited.add(name);
+    if(name==='updates')loadUpd('all',document.querySelector('#pg-updates .tag'));
+    if(name==='news')loadNews('india',document.querySelector('#pg-news .tag'));
+    if(name==='flash')loadFC('physics',document.querySelector('#fTags .tag'));
+  }
+}
 
-// ── Subjects config (topics fetched from Wikipedia/API) ────────────────────
-const SUBJECTS = {
-  math:      { name:"Mathematics ➕", wiki:"Mathematics", topics:["Algebra","Geometry","Fractions","Percentage","Trigonometry","Statistics","Number Theory","Coordinate Geometry"] },
-  science:   { name:"Science 🔬",    wiki:"Science",      topics:["Matter","Force","Energy","Motion","Electricity","Magnetism","Light","Sound"] },
-  physics:   { name:"Physics ⚛️",    wiki:"Physics",      topics:["Motion","Newton Laws","Light","Sound","Heat","Thermodynamics","Waves","Optics"] },
-  chemistry: { name:"Chemistry 🧪",  wiki:"Chemistry",    topics:["Matter","Atoms","Periodic Table","Chemical Reactions","Acids and Bases","Carbon compounds","Metals","Electrolysis"] },
-  bio:       { name:"Biology 🧬",    wiki:"Biology",      topics:["Cell biology","Photosynthesis","Human digestive system","Nervous system","Genetics","Evolution","Ecosystem","Reproduction"] },
-  hindi:     { name:"Hindi 🇮🇳",     wiki:"Hindi grammar",topics:["Hindi grammar","Sandhi Hindi","Hindi vyakaran","Samas","Ras Hindi literature","Alankar Hindi","Kavita","Hindi nibandh"] },
-  english:   { name:"English 🔤",    wiki:"English grammar",topics:["Tenses English","Parts of speech","Active and passive voice","Direct and indirect speech","Prepositions","Conjunctions","Reported speech","Essay writing"] },
-  history:   { name:"History/SST 🌍",wiki:"History of India",topics:["Ancient India","Mughal Empire","Indian independence movement","Constitution of India","French Revolution","World War II","Cold War","Indian National Congress"] },
-  computer:  { name:"Computer 💻",   wiki:"Computer science",topics:["Computer hardware","Software","Programming","Internet","Database","Networking","Operating system","Python programming"] },
-  gk:        { name:"General Knowledge 🧠",wiki:"India",  topics:["India geography","Indian states","National symbols of India","Science inventions","World history","Indian economy","Sports India","Current affairs India"] },
+function openSearch(){document.getElementById('srchOverlay').classList.add('on');setTimeout(()=>document.getElementById('srchIn').focus(),100);}
+function closeSearch(){document.getElementById('srchOverlay').classList.remove('on');document.getElementById('srchIn').value='';document.getElementById('srchRes').innerHTML='';}
+function doSearch(v){
+  v=v.toLowerCase().trim();const r=document.getElementById('srchRes');
+  if(!v){r.innerHTML='';return;}
+  const res=[];
+  Object.entries(SUBS).forEach(([sk,sv])=>sv.topics.forEach(t=>{if(t.toLowerCase().includes(v)||sv.name.toLowerCase().includes(v))res.push({sk,t,sn:sv.name,ic:sv.ic});}));
+  if(!res.length){r.innerHTML='<div style="padding:12px;color:var(--sub);font-size:12px">Koi result nahi 😕</div>';return;}
+  r.innerHTML=res.slice(0,8).map(x=>`<div class="srch-item" onclick="closeSearch();goTab('study',0);setTimeout(()=>loadTopic('${x.sk}','${x.t}'),100)"><span style="font-size:16px">${x.ic}</span><div><div style="font-size:12px;font-weight:600">${x.t}</div><div style="font-size:10px;color:var(--sub)">${x.sn}</div></div></div>`).join('');
+}
+
+const SUBS={
+  math:{name:"Mathematics",ic:"➕",topics:["Algebra","Geometry","Fractions","Percentage","Trigonometry","Statistics","Probability","Number System","Quadratic Equations","Coordinate Geometry","Arithmetic Progression","Surface Area Volume"]},
+  science:{name:"Science",ic:"🔬",topics:["Matter","Force and Laws of Motion","Gravitation","Work and Energy","Sound","Light","Electricity","Magnetic Effects","Natural Resources","Cell structure","Life Processes"]},
+  physics:{name:"Physics",ic:"⚛️",topics:["Motion kinematics","Newton Laws of Motion","Gravitation","Work Energy Power","Waves physics","Thermodynamics","Optics","Electrostatics","Current Electricity","Electromagnetic Induction"]},
+  chemistry:{name:"Chemistry",ic:"🧪",topics:["Atomic Structure","Periodic Table","Chemical Bonding","Acids Bases Salts","Metals and Non-metals","Carbon Compounds","Chemical Reactions","Electrochemistry"]},
+  bio:{name:"Biology",ic:"🧬",topics:["Cell biology","Photosynthesis","Human digestive system","Human respiratory system","Nervous system","Genetics","Evolution","Ecosystem","Reproduction biology"]},
+  hindi:{name:"Hindi",ic:"🇮🇳",topics:["Hindi vyakaran","Sandhi","Samas","Ras","Alankar","Hindi sahitya","Kabir Das","Tulsidas","Patra lekhan","Hindi nibandh"]},
+  english:{name:"English",ic:"🔤",topics:["Tenses grammar","Parts of speech","Active passive voice","Direct indirect speech","Prepositions","Articles","Essay writing","Letter writing","Comprehension passage"]},
+  history:{name:"History/SST",ic:"🌍",topics:["Ancient India history","Mughal Empire","Indian independence movement","Constitution of India","French Revolution","World War II","Cold War","Indian National Movement","Directive Principles"]},
+  computer:{name:"Computer",ic:"💻",topics:["Computer fundamentals","Hardware software","Internet basics","Database management","Python programming","HTML CSS basics","MS Office","Cybersecurity","Artificial Intelligence basics"]},
+  gk:{name:"General Knowledge",ic:"🧠",topics:["India geography","Indian states and capitals","National symbols India","Science inventions 2026","World geography","Indian constitution","Current affairs 2026","Nobel Prize 2025","Indian economy 2026"]},
 };
-
-let curSub = null, curTopics = [];
-
-// ── Tab system ─────────────────────────────────────────────────────────────
-const TABS = ['study','quiz','flash','updates','news','ai','tools'];
-let curTabIdx = 0, initedTabs = new Set();
-
-function goTab(name, i) {
-  TABS.forEach((t,j) => {
-    document.getElementById('pg-'+t).className = 'pg' + (j===i?' on':'');
-    document.querySelectorAll('.tab')[j].className = 'tab' + (j===i?' on':'');
-    document.querySelectorAll('.bni')[j].className = 'bni' + (j===i?' on':'');
-  });
-  curTabIdx = i;
-  if (!initedTabs.has(name)) {
-    initedTabs.add(name);
-    if (name==='updates') loadUpdates('all', document.querySelector('#pg-updates .tag'));
-    if (name==='news') loadNews('india', document.querySelector('#pg-news .tag'));
-    if (name==='flash') loadFlash('physics', document.querySelector('#pg-flash .tag'));
-  }
+let cSub=null;
+function openSub(k){
+  const s=SUBS[k];if(!s)return;cSub=k;
+  document.getElementById('sHome').style.display='none';
+  document.getElementById('contentV').style.display='none';
+  const lv=document.getElementById('lessonV');lv.style.display='block';
+  document.getElementById('lessonT').textContent=`${s.ic} ${s.name}`;
+  document.getElementById('lessonL').innerHTML=s.topics.map(t=>`<div class="lcard" onclick="loadTopic('${k}','${t}')"><div class="li">📖</div><div style="flex:1"><div class="lt">${t}</div><div class="ld">Wikipedia + AI se</div></div><div class="la">Padhein →</div></div>`).join('');
 }
-
-// ── Study — Wikipedia API ──────────────────────────────────────────────────
-function openSub(key) {
-  const s = SUBJECTS[key]; if (!s) return;
-  curSub = key;
-  document.getElementById('studyGrid').style.display = 'none';
-  document.getElementById('contentView').style.display = 'none';
-  const lv = document.getElementById('lessonView');
-  lv.style.display = 'block';
-  document.getElementById('lessonTitle').textContent = s.name;
-  const ll = document.getElementById('lessonList');
-  ll.innerHTML = s.topics.map(t =>
-    `<div class="lcard" onclick="loadTopic('${key}','${t}')">
-      <div class="li">📖</div>
-      <div style="flex:1"><div class="lt">${t}</div><div class="ld">Wikipedia se</div></div>
-      <div class="lb">Padhein</div></div>`
-  ).join('');
+async function loadTopic(sk,topic){
+  document.getElementById('lessonV').style.display='none';
+  document.getElementById('contentV').style.display='block';
+  document.getElementById('contentB').innerHTML='<div class="loader"><div class="spin"></div>Wikipedia se la raha hoon...</div>';
+  let html='',title=topic;
+  try{const d=await fetchWiki(topic);html=d.html;title=d.title;}
+  catch{const ai=await getAI(`${topic} ko Hindi mein clearly explain karo. Key points, examples, aur exam tips do.`,'study');html=mdH(ai);}
+  document.getElementById('contentB').innerHTML=`<div class="cbox"><h2>📖 ${title}</h2><div class="cbody">${html}</div>
+    <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--brd)">
+      <div style="font-size:11px;font-weight:700;margin-bottom:8px;color:var(--sub)">🎯 QUICK QUIZ</div>
+      <div id="iqB"><div class="loader" style="padding:12px"><div class="spin"></div></div></div>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn btn-p btn-sm" onclick="mkNotes('${topic}')">📝 AI Notes</button>
+      <a href="https://en.wikipedia.org/wiki/${encodeURIComponent(topic)}" target="_blank" class="btn btn-s btn-sm">🌐 Wikipedia</a>
+    </div></div>`;
+  loadIQ(sk);
 }
-
-async function loadTopic(sk, topic) {
-  document.getElementById('lessonView').style.display = 'none';
-  document.getElementById('contentView').style.display = 'block';
-  document.getElementById('contentBox').innerHTML =
-    `<div class="loader"><div class="spin"></div>Wikipedia se la raha hoon...</div>`;
-  try {
-    const data = await fetchWiki(topic);
-    document.getElementById('contentBox').innerHTML =
-      `<div class="content-box">
-        <h2>📖 ${data.title}</h2>
-        <div class="content-body">${data.html}</div>
-        <div class="quiz-box" id="inlineQuiz">
-          <h3>🎯 Quick Quiz — Open Trivia API se</h3>
-          <div id="iqContent"><div class="loader"><div class="spin"></div></div></div>
-        </div>
-       </div>`;
-    loadInlineQuiz(sk);
-  } catch(e) {
-    document.getElementById('contentBox').innerHTML =
-      `<div class="content-box"><h2>⚠️ Error</h2><p>${e.message}</p>
-       <p><a href="https://en.wikipedia.org/wiki/${encodeURIComponent(topic)}" target="_blank" class="btn btn-p">Wikipedia pe Padhein</a></p></div>`;
-  }
+async function fetchWiki(t){
+  for(const l of['hi','en']){
+    try{const r=await fetch(`https://${l}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(t.replace(/ /g,'_'))}`);
+      if(r.ok){const d=await r.json();if(d.extract&&d.extract.length>80){
+        const h=d.extract.split('\n').filter(Boolean).map(p=>`<p>${p}</p>`).join('');
+        return{title:d.title,html:h+`<p style="margin-top:8px"><a href="${d.content_urls?.desktop?.page||'#'}" target="_blank" style="color:var(--p);font-size:11px">Poora article →</a></p>`};
+      }}
+    }catch{}
+  }throw new Error('not found');
 }
-
-async function fetchWiki(topic) {
-  // Try Hindi Wikipedia first
-  const langs = [
-    `https://hi.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topic)}`,
-    `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topic)}`,
-  ];
-  for (const url of langs) {
-    try {
-      const r = await fetch(url);
-      if (r.ok) {
-        const d = await r.json();
-        if (d.extract && d.extract.length > 80) {
-          const html = `<p>${d.extract.replace(/\n\n/g,'</p><p>')}</p>
-            <p style="margin-top:12px"><a href="${d.content_urls?.desktop?.page||'#'}" target="_blank" class="btn btn-p" style="font-size:11px">📖 Poora Article Padhein</a></p>`;
-          return { title: d.title, html };
-        }
-      }
-    } catch {}
-  }
-  throw new Error(`'${topic}' ke liye Wikipedia content nahi mila.`);
+async function loadIQ(sk){
+  const cm={math:19,science:17,physics:17,chemistry:17,bio:17,history:23,computer:18,english:10,gk:9};
+  try{const qs=await fetchTrivia(cm[sk]||9,3);
+    const el=document.getElementById('iqB');if(!el||!qs.length)return;
+    el.innerHTML=qs.map((q,qi)=>{const opts=shuf([...q.incorrect_answers,q.correct_answer]);const ci=opts.indexOf(q.correct_answer);
+      return`<p style="font-size:12px;font-weight:600;margin:8px 0 5px;color:var(--txt)">${qi+1}. ${dH(q.question)}</p>${opts.map((o,oi)=>`<div class="qopt" id="iq_${qi}_${oi}" onclick="aIQ(${qi},${oi},${ci})">${dH(o)}</div>`).join('')}`;
+    }).join('');
+  }catch{}
 }
-
-async function loadInlineQuiz(sk) {
-  const catMap = {math:19,science:17,physics:17,chemistry:17,bio:17,
-    history:23,computer:18,english:10,gk:9,sst:23};
-  const cat = catMap[sk] || 9;
-  try {
-    const qs = await fetchTrivia(cat, 3);
-    const el = document.getElementById('iqContent');
-    if (!el || !qs.length) return;
-    el.innerHTML = '';
-    qs.forEach((q,qi) => {
-      const opts = shuffle([...q.incorrect_answers, q.correct_answer]);
-      const corrIdx = opts.indexOf(q.correct_answer);
-      el.innerHTML += `<p style="font-size:12px;font-weight:600;margin:8px 0 5px">${qi+1}. ${decodeHtml(q.question)}</p>
-        ${opts.map((o,oi)=>`<div class="qopt" id="qi_${qi}_${oi}" onclick="ansIQ(${qi},${oi},${corrIdx},${qs.length})">${decodeHtml(o)}</div>`).join('')}`;
-    });
-  } catch {}
+function aIQ(qi,c,ok){document.querySelectorAll(`[id^="iq_${qi}_"]`).forEach((e,i)=>{e.classList.add('done');if(i===ok)e.classList.add('ok');else if(i===c&&c!==ok)e.classList.add('no');});}
+async function mkNotes(topic){
+  const btn=event.target;btn.textContent='⏳...';btn.disabled=true;
+  const n=await getAI(`${topic} ke liye Hindi study notes banao. Bullet points. Key points, formulas, important dates, exam tips.`,'study');
+  document.querySelector('.cbox').innerHTML+=`<div style="margin-top:12px;padding:12px;background:var(--card2);border-radius:10px;border:1px solid var(--brd)"><div style="font-size:11px;font-weight:700;margin-bottom:6px;color:var(--p)">📝 AI Notes — ${topic}</div><div class="cbody">${mdH(n)}</div></div>`;
 }
+function backGrid(){document.getElementById('sHome').style.display='';document.getElementById('lessonV').style.display='none';document.getElementById('contentV').style.display='none';}
+function backLessons(){document.getElementById('lessonV').style.display='block';document.getElementById('contentV').style.display='none';}
 
-function ansIQ(qi, chosen, correct, total) {
-  document.querySelectorAll(`[id^="qi_${qi}_"]`).forEach((el,i)=>{
-    el.classList.add('done');
-    if(i===correct) el.classList.add('ok');
-    else if(i===chosen&&chosen!==correct) el.classList.add('no');
-  });
+let aiL='hi',chatH=[];
+function setL(l){aiL=l;['Hi','En','Mix'].forEach(x=>document.getElementById('l'+x).classList.remove('on'));document.getElementById('l'+l.charAt(0).toUpperCase()+l.slice(1)).classList.add('on');}
+async function sendAI(){
+  const inp=document.getElementById('aiIn');const txt=inp.value.trim();if(!txt)return;
+  inp.value='';addM(txt,'u');chatH.push({role:'user',content:txt});
+  const tm=addM('🤔 Soch raha hoon...','b typing');
+  const li=aiL==='hi'?'Sirf Hindi mein jawab do.':aiL==='en'?'Answer in English only.':'Hindi+English mix (Hinglish) mein.';
+  const sys=`Expert Study Tutor for Indian students. ${li} Sirf padhai topics. Off-topic pe refuse karo politely. Step-by-step jawab do. Markdown use karo.`;
+  const hist=chatH.slice(-5).map(m=>`${m.role}: ${m.content}`).join('\n');
+  try{const r=await getAI(`${sys}\n\n${hist}\nassistant:`,'chat');chatH.push({role:'assistant',content:r});tm.remove();const m=addM(mdH(r),'b');m.style.maxWidth='92%';}
+  catch{tm.textContent='⚠️ Error. Dobara try karo.';tm.classList.remove('typing');}
 }
+function addM(html,cls){const m=document.createElement('div');m.className=`msg ${cls}`;m.innerHTML=html;const c=document.getElementById('chatMsgs');c.appendChild(m);c.scrollTop=c.scrollHeight;return m;}
 
-function backToGrid() {
-  document.getElementById('studyGrid').style.display = '';
-  document.getElementById('lessonView').style.display = 'none';
-  document.getElementById('contentView').style.display = 'none';
+let qS={qs:[],cur:0,score:0,sub:'',cat:0,daily:0,streak:0};
+const QL=['A','B','C','D'];
+async function startQ(sub,cat){
+  document.getElementById('qHome').style.display='none';document.getElementById('qPlay').style.display='block';
+  document.getElementById('qContent').innerHTML='<div class="loader"><div class="spin"></div>Questions la raha hoon...</div>';
+  try{const qs=await fetchTrivia(cat,5);qS={...qS,qs,cur:0,score:0,sub,cat};renderQ();}
+  catch{document.getElementById('qContent').innerHTML=`<div style="text-align:center;padding:20px;color:var(--sub)">⚠️ Nahi mili. <button class="btn btn-p btn-sm" onclick="startQ('${sub}',${cat})">Retry</button></div>`;}
 }
-function backToLessons() {
-  document.getElementById('lessonView').style.display = 'block';
-  document.getElementById('contentView').style.display = 'none';
-}
-
-// ── Search ─────────────────────────────────────────────────────────────────
-function onSearch(v) {
-  v = v.toLowerCase().trim();
-  if (!v) { backToGrid(); return; }
-  document.getElementById('lessonView').style.display = 'none';
-  document.getElementById('contentView').style.display = 'none';
-  const g = document.getElementById('studyGrid');
-  g.style.display = ''; g.innerHTML = '';
-  Object.entries(SUBJECTS).forEach(([sk, sv]) => {
-    sv.topics.forEach(t => {
-      if (t.toLowerCase().includes(v) || sv.name.toLowerCase().includes(v)) {
-        g.innerHTML += `<div class="scard" onclick="loadTopic('${sk}','${t}')">
-          <div class="si">📖</div><div class="sn" style="font-size:11px">${t}</div>
-          <div class="sc">${sv.name}</div></div>`;
-      }
-    });
-  });
-  if (!g.innerHTML) g.innerHTML = '<div class="empty" style="grid-column:span 2"><div class="ei">🔍</div>Koi result nahi</div>';
-}
-
-// ── Quiz — Open Trivia API (100% free, no key) ────────────────────────────
-let quizState = {qs:[], cur:0, score:0, cat:'', daily:0, correct:0};
-
-async function startQuiz(cat, catId) {
-  document.getElementById('quizHome').style.display = 'none';
-  document.getElementById('quizPlay').style.display = 'block';
-  document.getElementById('quizContent').innerHTML =
-    '<div class="loader"><div class="spin"></div>Questions la raha hoon...</div>';
-  try {
-    const qs = await fetchTrivia(catId, 5);
-    quizState = {qs, cur:0, score:0, cat, daily: quizState.daily, correct: quizState.correct};
-    renderQuiz();
-  } catch(e) {
-    document.getElementById('quizContent').innerHTML =
-      `<div class="empty"><div class="ei">⚠️</div>Quiz load nahi hua. Dobara try karo.<br><small>${e.message}</small></div>`;
-  }
-}
-
-async function fetchTrivia(catId, amount=5) {
-  const url = `https://opentdb.com/api.php?amount=${amount}&category=${catId}&type=multiple`;
-  const r = await fetch(url);
-  if (!r.ok) throw new Error("Trivia API fail");
-  const d = await r.json();
-  if (!d.results?.length) throw new Error("No questions");
-  return d.results;
-}
-
-function renderQuiz() {
-  const {qs, cur, score} = quizState;
-  if (cur >= qs.length) {
-    const pct = Math.round(score/qs.length*100);
-    quizState.daily++;
-    document.getElementById('qToday').textContent = quizState.daily;
-    document.getElementById('qScore').textContent = pct+'%';
-    document.getElementById('quizContent').innerHTML =
-      `<div style="text-align:center;padding:24px">
-        <div style="font-size:48px">${pct>=80?'🏆':pct>=60?'⭐':'💪'}</div>
-        <h2 style="margin:12px 0 6px">${pct>=80?'Shabash! Perfect!':pct>=60?'Achha kiya!':'Aur practice karo!'}</h2>
-        <div style="font-size:24px;font-weight:700;color:var(--p);margin:10px 0">${score}/${qs.length}</div>
-        <p style="color:var(--sub);font-size:13px;margin-bottom:16px">${pct}% Accuracy</p>
-        <button class="btn btn-p" onclick="startQuiz('${quizState.cat}',0)">🔄 Dobara</button>
-        <button class="btn btn-s" onclick="resetQuiz()" style="margin-left:8px">🏠 Home</button>
-      </div>`;
+async function fetchTrivia(cat,n){const r=await fetch(`https://opentdb.com/api.php?amount=${n}&category=${cat}&type=multiple`);if(!r.ok)throw new Error('fail');const d=await r.json();if(!d.results?.length)throw new Error('empty');return d.results;}
+function renderQ(){
+  const{qs,cur,score}=qS;
+  if(cur>=qs.length){
+    const pct=Math.round(score/qs.length*100);qS.daily++;if(pct>=70)qS.streak++;else qS.streak=0;
+    document.getElementById('qToday').textContent=qS.daily;document.getElementById('qAcc').textContent=pct+'%';document.getElementById('qStrk').textContent=qS.streak+'🔥';
+    document.getElementById('qContent').innerHTML=`<div style="text-align:center;padding:16px">
+      <div style="font-size:38px;margin-bottom:10px">${pct>=80?'🏆':pct>=60?'⭐':'💪'}</div>
+      <div style="font-size:28px;font-weight:800;color:var(--p)">${score}/${qs.length}</div>
+      <div style="font-size:12px;color:var(--sub);margin:6px 0 14px">${pct}% • ${pct>=80?'Zabardast!':pct>=60?'Bahut achha!':'Aur practice karo!'}</div>
+      <button class="btn btn-p btn-sm" onclick="startQ('${qS.sub}',${qS.cat})" style="margin-right:6px">🔄 Dobara</button>
+      <button class="btn btn-s btn-sm" onclick="resetQ()">🏠 Home</button></div>`;
     return;
   }
-  const q = qs[cur];
-  const opts = shuffle([...q.incorrect_answers, q.correct_answer]);
-  const corrIdx = opts.indexOf(q.correct_answer);
-  document.getElementById('quizContent').innerHTML =
-    `<div style="font-size:11px;color:var(--sub);margin-bottom:8px">Q ${cur+1}/${qs.length}  •  Score: ${score}</div>
-     <div style="font-size:14px;font-weight:700;line-height:1.45;margin-bottom:12px">${decodeHtml(q.question)}</div>
-     ${opts.map((o,i)=>`<div class="qopt" id="qo_${i}" onclick="pickQ(${i},${corrIdx})">${decodeHtml(o)}</div>`).join('')}`;
+  const q=qs[cur];const opts=shuf([...q.incorrect_answers,q.correct_answer]);const ci=opts.indexOf(q.correct_answer);
+  document.getElementById('qContent').innerHTML=`<div class="qcard">
+    <div class="qprog"><div class="qprogbar" style="width:${Math.round(cur/qs.length*100)}%;height:100%;background:linear-gradient(90deg,var(--p),#a855f7);transition:.3s"></div></div>
+    <div style="font-size:11px;color:var(--sub);margin-bottom:10px">Q ${cur+1}/${qs.length} • Score: ${score}</div>
+    <div class="qtext">${dH(q.question)}</div>
+    ${opts.map((o,i)=>`<div class="qopt" id="qo_${i}" onclick="pickQ(${i},${ci})"><div class="qletter">${QL[i]}</div>${dH(o)}</div>`).join('')}
+  </div>`;
 }
+function pickQ(c,ok){document.querySelectorAll('[id^="qo_"]').forEach((e,i)=>{e.classList.add('done');if(i===ok)e.classList.add('ok');else if(i===c&&c!==ok)e.classList.add('no');});if(c===ok)qS.score++;setTimeout(()=>{qS.cur++;renderQ();},850);}
+function resetQ(){document.getElementById('qHome').style.display='';document.getElementById('qPlay').style.display='none';}
 
-function pickQ(chosen, correct) {
-  document.querySelectorAll('[id^="qo_"]').forEach((el,i)=>{
-    el.classList.add('done');
-    if(i===correct) el.classList.add('ok');
-    else if(i===chosen&&chosen!==correct) el.classList.add('no');
-  });
-  if (chosen===correct) quizState.score++;
-  setTimeout(()=>{quizState.cur++; renderQuiz();}, 800);
-}
-function resetQuiz() {
-  document.getElementById('quizHome').style.display='';
-  document.getElementById('quizPlay').style.display='none';
-}
-
-// ── Flashcards — Wikipedia API ─────────────────────────────────────────────
-const FLASH_TOPICS = {
-  physics:   ["Newton's laws of motion","Ohm's law","Speed of light","Archimedes principle","Boyle law","Faraday law"],
-  chemistry: ["Periodic table","Atomic structure","Chemical bonding","Avogadro constant","Acid","Base chemistry"],
-  biology:   ["Photosynthesis","Cell membrane","DNA","Natural selection","Mitosis","Ecosystem"],
-  history:   ["Indian independence movement","Mughal Empire","World War II","French Revolution","Cold War","Ancient Rome"],
-  geography: ["Himalayas","Ganga river","Indian Ocean","Monsoon","Tundra","Tropical rainforest"],
-  science:   ["Gravity","Electromagnetic spectrum","Photosynthesis","Nuclear fission","Plate tectonics","Black hole"],
-};
-
-let flashCards = [], flashIdx = 0, flashFlipped = false;
-
-async function loadFlash(cat, tagEl) {
-  document.querySelectorAll('#pg-flash .tag').forEach(t=>t.className='tag');
-  if(tagEl) tagEl.className='tag on';
-  const topics = FLASH_TOPICS[cat] || FLASH_TOPICS.science;
-  document.getElementById('flashContainer').innerHTML =
-    '<div class="loader"><div class="spin"></div>Flashcards ban rahe hain...</div>';
-  document.getElementById('flashNav').style.display = 'none';
-  flashCards = []; flashIdx = 0; flashFlipped = false;
-  for (const t of topics.slice(0,4)) {
-    try {
-      const d = await fetchWiki(t);
-      const summary = d.html.replace(/<[^>]+>/g,'').slice(0,200)+'...';
-      flashCards.push({q: t, a: summary});
-    } catch {}
+const FT={physics:["Newton's laws of motion","Ohm's law","Archimedes principle","Boyle law","Faraday electromagnetic induction","Speed of light"],chem:["Periodic table","Atomic structure","Chemical bonding","Acids and bases","Carbon compounds","Electrochemistry"],bio:["Photosynthesis","Cell membrane","DNA structure","Natural selection","Mitosis","Food chain ecosystem"],history:["Indian independence movement","Mughal Empire","World War II","French Revolution","Cold War","Maurya Empire India"],math:["Quadratic formula mathematics","Pythagoras theorem","Trigonometry","Arithmetic Progression","Probability","Statistics"],gk:["India geography 2026","National symbols India","Indian constitution","Science inventions","Current affairs India 2026","Nobel Prize 2025"]};
+let fcC=[],fcI=0,fcF=false;
+async function loadFC(cat,tagEl){
+  document.querySelectorAll('#fTags .tag').forEach(t=>t.className='tag');if(tagEl)tagEl.className='tag on';
+  fcC=[];fcI=0;fcF=false;
+  document.getElementById('fcCont').innerHTML='<div class="loader"><div class="spin"></div>Flashcards ban rahe hain...</div>';
+  document.getElementById('fcNav').innerHTML='';
+  const topics=(FT[cat]||FT.physics).slice(0,5);
+  for(const t of topics){
+    try{const d=await fetchWiki(t);fcC.push({q:t,a:d.html.replace(/<[^>]+>/g,'').slice(0,200)+'...'});}
+    catch{try{const a=await getAI(`${t} kya hai? 2-3 lines simple Hindi mein.`,'study');fcC.push({q:t,a:a.slice(0,200)});}catch{}}
   }
-  if (!flashCards.length) {
-    document.getElementById('flashContainer').innerHTML =
-      '<div class="empty"><div class="ei">⚠️</div>Cards nahi aayi. Dobara try karo.</div>';
-    return;
+  if(!fcC.length){document.getElementById('fcCont').innerHTML='<div style="text-align:center;padding:20px;color:var(--sub)">⚠️ Cards nahi bane. Retry karo.</div>';return;}
+  renderFC();
+}
+function renderFC(){
+  fcF=false;const c=fcC[fcI];
+  document.getElementById('fcCont').innerHTML=`<div class="fc" id="fc" onclick="flipFC()"><div class="fq">${c.q}</div><div class="fhint">👆 Tap — answer dekhne ke liye</div></div><div style="text-align:center;margin-bottom:4px;font-size:11px;color:var(--sub)">${fcI+1}/${fcC.length}</div>`;
+  document.getElementById('fcNav').innerHTML=`<button class="btn btn-s btn-sm" onclick="fcP()" ${fcI===0?'disabled':''}>← Prev</button><button class="btn btn-p btn-sm" onclick="fcN()" ${fcI===fcC.length-1?'disabled':''}>Next →</button>`;
+}
+function flipFC(){const fc=document.getElementById('fc');if(!fc)return;if(!fcF){fc.classList.add('flipped');fc.innerHTML=`<div class="fa">${fcC[fcI].a}</div>`;fcF=true;}else{fc.classList.remove('flipped');fc.innerHTML=`<div class="fq">${fcC[fcI].q}</div><div class="fhint">👆 Tap — answer</div>`;fcF=false;}}
+function fcN(){if(fcI<fcC.length-1){fcI++;renderFC();}}
+function fcP(){if(fcI>0){fcI--;renderFC();}}
+
+const UQ={all:"India March 2026 latest sarkari updates naukri recruitment form result yojana. Real 2026 info.",jobs:"India government jobs sarkari naukri recruitment March 2026 latest.",forms:"India online form apply government March 2026 last dates.",results:"India board exam results March 2026 CBSE UP Bihar state boards.",yojana:"India PM Modi government yojana schemes March 2026 benefits.",admit:"India admit card hall ticket March 2026.",scholar:"India scholarship 2026 students apply."};
+const NQ={india:"India latest breaking news today March 15 2026.",pol:"India politics BJP Congress Parliament news March 2026.",sport:"India cricket IPL 2026 sports news.",biz:"India economy budget business market March 2026.",edu:"India education CBSE JEE NEET board exam news 2026."};
+async function loadUpd(type,tagEl){
+  document.querySelectorAll('#pg-updates .tag').forEach(t=>t.className='tag');if(tagEl)tagEl.className='tag on';
+  const c=document.getElementById('updCont');c.innerHTML='<div class="loader"><div class="spin"></div>Latest 2026 updates la raha hoon...</div>';
+  const txt=await getAINews(UQ[type]||UQ.all,'sarkari');
+  c.innerHTML=`<div class="cbox"><div class="cbody">${mdH(txt)}</div></div>`;
+}
+async function loadNews(type,tagEl){
+  document.querySelectorAll('#pg-news .tag').forEach(t=>t.className='tag');if(tagEl)tagEl.className='tag on';
+  const c=document.getElementById('newsCont');c.innerHTML='<div class="loader"><div class="spin"></div>Taaza khabar la raha hoon...</div>';
+  let html='';
+  const rss={india:'https://feeds.feedburner.com/ndtvnews-top-stories',sport:'https://feeds.feedburner.com/ndtvsports-latest'};
+  if(rss[type]){try{const r=await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rss[type])}`,{signal:AbortSignal.timeout(7000)});if(r.ok){const d=await r.json();html=parseRSS(d.contents);}}catch{}}
+  if(!html){const txt=await getAINews(NQ[type]||NQ.india,'news');html=`<div class="cbox"><div class="cbody">${mdH(txt)}</div></div>`;}
+  c.innerHTML=html;
+}
+function parseRSS(xml){try{const items=[...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0,7);if(!items.length)return'';return items.map(m=>{const t=(m[1].match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/)||[])[1]?.trim()||'';const l=(m[1].match(/<link>(.*?)<\/link>/)||[])[1]?.trim()||'';const p=(m[1].match(/<pubDate>(.*?)<\/pubDate>/)||[])[1]?.trim().slice(0,16)||'';return t?`<div class="ncard"><div class="nt">${t.slice(0,80)}</div><div class="nd">📅 ${p}</div>${l?`<a href="${l}" target="_blank">Padhein →</a>`:''}</div>`:''}).join('');}catch{return'';}}
+
+let pI=null,pS=25*60,pM='work';
+function tool(t){
+  const c=document.getElementById('toolCont');
+  if(t==='pomo'){c.innerHTML=`<div class="cbox"><div style="font-size:14px;font-weight:700;margin-bottom:14px;text-align:center">⏱️ Pomodoro Timer</div>
+    <div style="text-align:center">
+      <div class="pomo-ring"><svg width="155" height="155" viewBox="0 0 155 155"><circle class="pomo-bg" cx="77.5" cy="77.5" r="65" stroke-dasharray="408"/><circle class="pomo-fg" id="pArc" cx="77.5" cy="77.5" r="65" stroke-dasharray="408" stroke-dashoffset="0"/></svg>
+      <div class="pomo-ctr"><div class="pomo-t" id="pDisp">25:00</div><div class="pomo-m" id="pMode">Study Time 📚</div></div></div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
+        <button class="btn btn-p btn-sm" onclick="pStart()">▶ Start</button>
+        <button class="btn btn-s btn-sm" onclick="pPause()">⏸ Pause</button>
+        <button class="btn btn-s btn-sm" onclick="pReset()">🔄 Reset</button>
+      </div><p style="font-size:10px;color:var(--sub);margin-top:8px">25 min study → 5 min break</p></div></div>`;}
+  else if(t==='cd'){c.innerHTML=`<div class="cbox"><div style="font-size:14px;font-weight:700;margin-bottom:12px">📅 Exam Countdown</div>
+    <input id="eName" placeholder="Exam naam (e.g. Board Exam 2026)" style="width:100%;background:var(--card2);border:1px solid var(--brd);border-radius:10px;padding:9px 12px;color:var(--txt);font-size:12px;outline:none;margin-bottom:8px">
+    <input type="date" id="eDate" style="width:100%;background:var(--card2);border:1px solid var(--brd);border-radius:10px;padding:9px 12px;color:var(--txt);font-size:13px;outline:none;margin-bottom:10px">
+    <button class="btn btn-p btn-sm" onclick="calcCD()">Calculate</button>
+    <div id="cdR" style="margin-top:10px"></div></div>`;}
+  else if(t==='formula'){c.innerHTML=`<div class="cbox"><div style="font-size:14px;font-weight:700;margin-bottom:12px">📐 Formula Sheet</div><div class="cbody">
+    <h3>➕ Mathematics</h3><div class="ex">x=(-b±√(b²-4ac))/2a (Quadratic)<br>A=πr² (Circle) &nbsp; A=l×b (Rectangle)<br>a²+b²=c² (Pythagoras)<br>CI: P(1+r/100)ⁿ &nbsp; SI: PRT/100</div>
+    <h3>⚛️ Physics</h3><div class="ex">v=u+at &nbsp; s=ut+½at² &nbsp; v²=u²+2as<br>F=ma &nbsp; W=Fd &nbsp; P=W/t<br>KE=½mv² &nbsp; PE=mgh &nbsp; V=IR</div>
+    <h3>🧪 Chemistry</h3><div class="ex">PV=nRT &nbsp; pH=-log[H⁺]<br>n=m/M &nbsp; ρ=m/V</div>
+    <h3>📊 Stats</h3><div class="ex">Mean=Σx/n &nbsp; P(E)=n(E)/n(S)</div></div></div>`;}
+  else if(t==='links'){c.innerHTML=`<div class="cbox"><div style="font-size:14px;font-weight:700;margin-bottom:12px">🔗 Free Resources</div><div class="cbody">
+    <h3>📚 NCERT</h3><p><a href="https://ncert.nic.in" target="_blank" style="color:var(--p)">ncert.nic.in →</a></p>
+    <h3>🎓 Khan Academy Hindi</h3><p><a href="https://hi.khanacademy.org" target="_blank" style="color:var(--p)">hi.khanacademy.org →</a></p>
+    <h3>📖 Wikipedia Hindi</h3><p><a href="https://hi.wikipedia.org" target="_blank" style="color:var(--p)">hi.wikipedia.org →</a></p>
+    <h3>💼 Sarkari</h3><p><a href="https://sarkariresult.com" target="_blank" style="color:var(--p)">sarkariresult.com →</a> &nbsp; <a href="https://rojgarresult.com" target="_blank" style="color:var(--p)">rojgarresult.com →</a></p>
+    <h3>📰 News</h3><p><a href="https://ndtv.in" target="_blank" style="color:var(--p)">ndtv.in →</a> &nbsp; <a href="https://aajtak.in" target="_blank" style="color:var(--p)">aajtak.in →</a></p></div></div>`;}
+  else if(t==='notes'){c.innerHTML=`<div class="cbox"><div style="font-size:14px;font-weight:700;margin-bottom:10px">📝 AI Notes Maker</div>
+    <input id="nTopic" placeholder="Topic likho (e.g. Photosynthesis)" style="width:100%;background:var(--card2);border:1px solid var(--brd);border-radius:10px;padding:9px 12px;color:var(--txt);font-size:12px;outline:none;margin-bottom:8px">
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <button class="btn btn-p btn-sm" onclick="mkNote('hi')">🇮🇳 Hindi Notes</button>
+      <button class="btn btn-s btn-sm" onclick="mkNote('en')">🇬🇧 English Notes</button>
+    </div><div id="nRes"></div></div>`;}
+  else if(t==='tutor'){c.innerHTML=`<div class="cbox"><div style="font-size:14px;font-weight:700;margin-bottom:8px">🎓 AI Tutor Mode</div>
+    <p style="font-size:11px;color:var(--sub);margin-bottom:10px">Koi bhi concept beginner se seekho — bilkul teacher ki tarah!</p>
+    <input id="tutT" placeholder="Kya seekhna hai? (e.g. Quadratic equations)" style="width:100%;background:var(--card2);border:1px solid var(--brd);border-radius:10px;padding:9px 12px;color:var(--txt);font-size:12px;outline:none;margin-bottom:8px">
+    <button class="btn btn-p btn-sm" onclick="startTutor()">🎓 Start Karo</button>
+    <div id="tutRes" style="margin-top:10px"></div></div>`;}
+}
+function pStart(){if(pI)return;const tot=(pM==='work'?25:5)*60;pI=setInterval(()=>{if(pS<=0){pPause();pM=(pM==='work'?'break':'work');pS=(pM==='work'?25:5)*60;}pS--;const m=Math.floor(pS/60),s=pS%60;const d=document.getElementById('pDisp');if(d)d.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;const l=document.getElementById('pMode');if(l)l.textContent=pM==='work'?'Study Time 📚':'Break Time ☕';const a=document.getElementById('pArc');if(a){const e=tot-pS;a.style.strokeDashoffset=408-(408*(e/tot));}},1000);}
+function pPause(){clearInterval(pI);pI=null;}
+function pReset(){pPause();pS=25*60;pM='work';const d=document.getElementById('pDisp');if(d)d.textContent='25:00';}
+function calcCD(){const n=document.getElementById('eName')?.value||'Exam';const dt=document.getElementById('eDate')?.value;if(!dt)return;const days=Math.ceil((new Date(dt)-new Date())/864e5);const r=document.getElementById('cdR');if(days<0)r.innerHTML=`<div style="text-align:center;padding:12px;background:var(--card2);border-radius:10px;color:var(--r)">❌ ${n} ho chuka hai!</div>`;else if(days===0)r.innerHTML=`<div style="text-align:center;padding:12px;background:var(--card2);border-radius:10px;color:var(--o)">⚠️ Aaj hai! Best of luck 🍀</div>`;else r.innerHTML=`<div style="text-align:center;padding:14px;background:var(--card2);border-radius:10px"><div style="font-size:38px;font-weight:800;color:var(--p)">${days}</div><div style="font-size:12px;font-weight:600;margin:4px 0">din baaki</div><div style="font-size:11px;color:var(--sub)">${n}</div><p style="font-size:10px;color:var(--sub);margin-top:8px">${days>60?'Bahut waqt hai! 💪':days>14?'Revision shuru karo! 📚':days>3?'Final revision! 🔥':'Kal hai! All the best! 🍀'}</p></div>`;}
+async function mkNote(lang){const t=document.getElementById('nTopic')?.value?.trim();if(!t){alert('Topic likho!');return;}const r=document.getElementById('nRes');r.innerHTML='<div class="loader" style="padding:12px"><div class="spin"></div>Notes ban rahe hain...</div>';const p=lang==='hi'?`${t} ke concise study notes Hindi mein banao. Sections: Definition, Key Points, Examples, Formulas/Dates, Exam Tips. Markdown.`:`Create study notes for ${t}. Sections: Definition, Key Points, Examples, Important Facts, Exam Tips. Markdown.`;const n=await getAI(p,'study');r.innerHTML=`<div style="background:var(--card2);border-radius:10px;padding:12px;border:1px solid var(--brd)"><div style="font-size:11px;font-weight:700;margin-bottom:6px;color:var(--p)">📝 ${t}</div><div class="cbody">${mdH(n)}</div></div>`;}
+async function startTutor(){const t=document.getElementById('tutT')?.value?.trim();if(!t){alert('Topic likho!');return;}const r=document.getElementById('tutRes');r.innerHTML='<div class="loader" style="padding:12px"><div class="spin"></div>Tutor taiyaar ho raha hai...</div>';const l=await getAI(`${t} bilkul beginner ko padhao. Hindi mein. Step 1 se shuru karo. Simple language. Examples do. Phir 1 practice question do.`,'study');r.innerHTML=`<div style="background:var(--card2);border-radius:10px;padding:12px;border:1px solid var(--brd)"><div class="cbody">${mdH(l)}</div><button class="btn btn-p btn-sm" style="margin-top:8px" onclick="startTutor()">🔄 Aur Padhao</button></div>`;}
+
+async function getAI(prompt,mode){
+  for(const fn of[()=>pollOAI(prompt,mode),()=>pollTxt(prompt)]){
+    try{const r=await fn();if(r&&r.length>10)return r;}catch{}
   }
-  renderFlash();
+  return "⚠️ AI abhi busy hai. Thodi der baad try karo ya Wikipedia check karo.";
 }
-
-function renderFlash() {
-  if (!flashCards.length) return;
-  const c = flashCards[flashIdx];
-  flashFlipped = false;
-  document.getElementById('flashContainer').innerHTML =
-    `<div class="flashcard" id="fc" onclick="flipFlash()">
-      <div class="fq">${c.q}</div>
-      <div class="fhint">👆 Tap karo — answer dekhne ke liye</div>
-     </div>
-     <div style="text-align:center">
-       <span style="font-size:12px;color:var(--sub)">${flashIdx+1}/${flashCards.length}</span>
-     </div>`;
-  const nav = document.getElementById('flashNav');
-  nav.style.display = 'flex'; nav.style.justifyContent = 'center'; nav.style.gap = '10px';
-  nav.innerHTML =
-    `<button class="btn btn-s" onclick="flashPrev()" ${flashIdx===0?'disabled':''}>← Prev</button>
-     <button class="btn btn-p" onclick="flashNext()" ${flashIdx===flashCards.length-1?'disabled':''}>Next →</button>`;
+async function pollOAI(prompt,mode){
+  const sys=mode==='study'?`Expert Indian teacher. Hindi mein clearly padhao. Markdown use karo.`:mode==='chat'?`Study AI Tutor. Sirf padhai. Hindi/Hinglish.`:`Helpful assistant.`;
+  const r=await fetch('https://text.pollinations.ai/openai',{method:'POST',signal:AbortSignal.timeout(20000),headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'openai',messages:[{role:'system',content:sys},{role:'user',content:prompt}],seed:Math.floor(Math.random()*9999),private:true})});
+  if(!r.ok)throw new Error(r.status);const d=await r.json();return d?.choices?.[0]?.message?.content||'';
 }
-
-function flipFlash() {
-  const fc = document.getElementById('fc'); if (!fc) return;
-  const c = flashCards[flashIdx];
-  if (!flashFlipped) {
-    fc.classList.add('flipped');
-    fc.innerHTML = `<div class="fa">${c.a}</div>`;
-    flashFlipped = true;
-  } else {
-    fc.classList.remove('flipped');
-    fc.innerHTML = `<div class="fq">${c.q}</div><div class="fhint">👆 Tap — answer dekhne ke liye</div>`;
-    flashFlipped = false;
-  }
+async function pollTxt(p){const r=await fetch(`https://text.pollinations.ai/${encodeURIComponent(p.slice(0,600))}`,{signal:AbortSignal.timeout(15000),headers:{Accept:'text/plain'}});if(!r.ok)throw new Error(r.status);return await r.text();}
+async function getAINews(prompt,type){
+  const sys=type==='sarkari'?`Indian sarkari updates assistant. Latest 2026 real info. Hindi mein bullet points.`:`Indian news summarizer. Latest March 2026 real news. Hindi mein.`;
+  const full=`${prompt}\n\n6-7 bullet points. Bold title, 1-2 line detail. Bilkul 2026 ki latest real information. Markdown.`;
+  const r=await getAI(full,'news');
+  return r||`⚠️ Updates nahi mili.\n• [sarkariresult.com](https://sarkariresult.com)\n• [ndtv.in](https://ndtv.in)`;
 }
-function flashNext() { if(flashIdx<flashCards.length-1){flashIdx++;renderFlash();} }
-function flashPrev() { if(flashIdx>0){flashIdx--;renderFlash();} }
-
-// ── Updates — G4F / NewsAPI fallback ──────────────────────────────────────
-const UPD_Q = {
-  all:"India sarkari naukri recruitment result yojana form 2025 latest",
-  jobs:"India government sarkari naukri recruitment vacancy 2025",
-  forms:"India online form apply government recruitment 2025",
-  results:"India board exam result 2025 CBSE UP Bihar",
-  yojana:"India government yojana scheme 2025 benefit",
-  admit:"India admit card hall ticket 2025",
-  scholar:"India scholarship 2025 students"
-};
-
-async function loadUpdates(type, tagEl) {
-  document.querySelectorAll('#pg-updates .tag').forEach(t=>t.className='tag');
-  if(tagEl) tagEl.className='tag on';
-  const c = document.getElementById('updCont');
-  c.innerHTML = '<div class="loader"><div class="spin"></div>Updates la raha hoon...</div>';
-  const txt = await getAIContent(
-    `India mein latest sarkari updates batao: "${UPD_Q[type]||UPD_Q.all}". `+
-    `2024-2025 real info. Hindi mein 7 bullet points. `+
-    `Har point: title bold, detail, official site agar ho. Markdown.`);
-  c.innerHTML = `<div class="content-box"><div class="content-body">${mdHtml(txt)}</div></div>`;
-}
-
-// ── News ───────────────────────────────────────────────────────────────────
-const NEWS_Q = {
-  india:"India aaj ki taza khabar latest news",
-  pol:"India politics BJP Congress news today",
-  sport:"India cricket IPL sports news",
-  biz:"India economy business market news",
-  edu:"India education school college exam news",
-  tech:"India technology mobile internet startup news"
-};
-
-async function loadNews(type, tagEl) {
-  document.querySelectorAll('#pg-news .tag').forEach(t=>t.className='tag');
-  if(tagEl) tagEl.className='tag on';
-  const c = document.getElementById('newsCont');
-  c.innerHTML = '<div class="loader"><div class="spin"></div>News la raha hoon...</div>';
-
-  // Try GNews RSS (CORS-free)
-  let html = await fetchNewsRSS(type);
-  if (!html) {
-    const txt = await getAIContent(
-      `${NEWS_Q[type]||NEWS_Q.india}. Hindi mein 7 latest news items. `+
-      `Har item: headline bold, 1-2 line detail, date. Markdown.`);
-    html = `<div class="content-box"><div class="content-body">${mdHtml(txt)}</div></div>`;
-  }
-  c.innerHTML = html;
-}
-
-async function fetchNewsRSS(type) {
-  // Use allorigins.win to bypass CORS for RSS
-  const RSS_URLS = {
-    india:"https://feeds.feedburner.com/ndtvnews-top-stories",
-    sport:"https://feeds.feedburner.com/ndtvsports-latest",
-    biz:"https://feeds.feedburner.com/ndtv/RssNDTVNews",
-    tech:"https://feeds.feedburner.com/ndtvgadgets",
-  };
-  const rss = RSS_URLS[type];
-  if (!rss) return null;
-  try {
-    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(rss)}`;
-    const r = await fetch(proxy, {signal: AbortSignal.timeout(8000)});
-    if (!r.ok) return null;
-    const d = await r.json();
-    const parser = new DOMParser();
-    const xml = parser.parseFromString(d.contents, "text/xml");
-    const items = [...xml.querySelectorAll("item")].slice(0,7);
-    if (!items.length) return null;
-    return '<div>' + items.map(it => {
-      const t = it.querySelector("title")?.textContent || "";
-      const desc = it.querySelector("description")?.textContent?.replace(/<[^>]+>/g,"")?.slice(0,120) || "";
-      const link = it.querySelector("link")?.textContent || "";
-      const pub = it.querySelector("pubDate")?.textContent?.slice(0,16) || "";
-      return `<div class="ncard"><div class="nt">${t}</div>
-        <div class="nm">${desc}... <a href="${link}" target="_blank">Poora padhein</a></div>
-        <div class="nm">📅 ${pub}</div></div>`;
-    }).join('') + '</div>';
-  } catch { return null; }
-}
-
-// ── AI Tutor ───────────────────────────────────────────────────────────────
-const STUDY_SYSTEM = `You are a strict Study Tutor AI for Indian students.
-ONLY answer study-related questions: Mathematics, Science, History, Geography, English, Hindi, Computer Science, General Knowledge, exam preparation, career guidance related to education.
-If asked anything off-topic (movies, entertainment, dating, cooking, etc.), politely say in Hindi: "Main sirf padhai ke sawaalon mein help kar sakta hoon. Koi study topic poochho!"
-Answer in Hindi/Hinglish. Use examples. Be clear and step-by-step. Use markdown and emojis.`;
-
-const chatHist = [];
-
-async function sendAI() {
-  const inp = document.getElementById('aiIn');
-  const txt = inp.value.trim(); if (!txt) return;
-  inp.value = '';
-  addMsg(txt, 'u');
-  chatHist.push({role:'user', content: txt});
-  const tm = addMsg('Soch raha hoon... 🤔', 'b typing');
-  try {
-    const fullPrompt = STUDY_SYSTEM + "\n\nConversation so far:\n" +
-      chatHist.slice(-5).map(m=>`${m.role}: ${m.content}`).join('\n') +
-      `\nuser: ${txt}`;
-    // Try Wikipedia answer first for factual questions
-    let resp = '';
-    if (txt.split(' ').length <= 5) {
-      try {
-        const wiki = await fetchWiki(txt);
-        resp = `📚 *${wiki.title}*\n\n${wiki.html.replace(/<[^>]+>/g,'').slice(0,400)}...\n\n_Wikipedia se_`;
-      } catch {}
-    }
-    if (!resp) {
-      resp = await getAIContent(fullPrompt);
-    }
-    chatHist.push({role:'assistant', content: resp});
-    tm.remove();
-    addMsg(mdHtml(resp), 'b');
-  } catch(e) {
-    tm.textContent = '⚠️ Error. Dobara try karo.';
-    tm.classList.remove('typing');
-  }
-}
-
-function addMsg(html, cls) {
-  const m = document.createElement('div');
-  m.className = `msg ${cls}`; m.innerHTML = html;
-  const c = document.getElementById('chatMsgs');
-  c.appendChild(m); c.scrollTop = c.scrollHeight;
-  return m;
-}
-
-// ── Tools ─────────────────────────────────────────────────────────────────
-let pomoInterval = null, pomoSecs = 25*60, pomoMode = 'work';
-
-function showTool(t) {
-  const c = document.getElementById('toolContent');
-  if (t === 'pomo') {
-    c.innerHTML = `
-      <div class="content-box">
-        <h2>⏱️ Pomodoro Timer</h2>
-        <div class="pomo-circle">
-          <div class="pomo-time" id="pomoTime">25:00</div>
-          <div class="pomo-label" id="pomoLbl">Study Time</div>
-        </div>
-        <div style="text-align:center;display:flex;gap:10px;justify-content:center;margin-top:12px">
-          <button class="btn btn-p" onclick="pomoStart()">▶ Start</button>
-          <button class="btn btn-s" onclick="pomoPause()">⏸ Pause</button>
-          <button class="btn btn-s" onclick="pomoReset()">🔄 Reset</button>
-        </div>
-        <p style="font-size:12px;color:var(--sub);text-align:center;margin-top:10px">25 min study → 5 min break</p>
-      </div>`;
-  } else if (t === 'countdown') {
-    c.innerHTML = `
-      <div class="content-box">
-        <h2>📅 Exam Countdown</h2>
-        <p style="font-size:13px;color:var(--sub);margin-bottom:12px">Exam date daalo:</p>
-        <input type="date" id="examDate" style="padding:8px;border:2px solid var(--brd);border-radius:10px;font-size:14px;width:100%;margin-bottom:10px">
-        <input type="text" id="examName" placeholder="Exam ka naam (jaise: Board Exam 2025)" style="padding:8px;border:2px solid var(--brd);border-radius:10px;font-size:13px;width:100%;margin-bottom:10px">
-        <button class="btn btn-p" onclick="calcCountdown()">Calculate</button>
-        <div id="cntResult" style="margin-top:12px"></div>
-      </div>`;
-  } else if (t === 'links') {
-    c.innerHTML = `
-      <div class="content-box">
-        <h2>🔗 Free Study Resources</h2>
-        <div class="content-body">
-          <h3>📚 NCERT Books</h3>
-          <p><a href="https://ncert.nic.in" target="_blank" class="btn btn-p" style="font-size:11px">ncert.nic.in</a></p>
-          <h3>🎓 Khan Academy</h3>
-          <p><a href="https://khanacademy.org/hi" target="_blank" class="btn btn-p" style="font-size:11px">khanacademy.org/hi</a></p>
-          <h3>📖 Wikipedia</h3>
-          <p><a href="https://hi.wikipedia.org" target="_blank" class="btn btn-p" style="font-size:11px">hi.wikipedia.org</a></p>
-          <h3>💼 Sarkari Results</h3>
-          <p><a href="https://sarkariresult.com" target="_blank" class="btn btn-p" style="font-size:11px">sarkariresult.com</a></p>
-          <p><a href="https://rojgarresult.com" target="_blank" class="btn btn-p" style="font-size:11px">rojgarresult.com</a></p>
-          <h3>📰 Hindi News</h3>
-          <p><a href="https://ndtv.in" target="_blank" class="btn btn-p" style="font-size:11px">ndtv.in</a>
-          <a href="https://aajtak.in" target="_blank" class="btn btn-s" style="font-size:11px;margin-left:6px">aajtak.in</a></p>
-        </div>
-      </div>`;
-  } else if (t === 'formula') {
-    c.innerHTML = `
-      <div class="content-box">
-        <h2>📐 Formula Sheet</h2>
-        <div class="content-body">
-          <h3>➕ Mathematics</h3>
-          <div class="example-box">Area of Rectangle = l × b<br>Area of Circle = πr²<br>Pythagoras: a² + b² = c²<br>Quadratic: x = (-b ± √(b²-4ac)) / 2a</div>
-          <h3>⚛️ Physics</h3>
-          <div class="example-box">v = u + at<br>s = ut + ½at²<br>F = ma<br>KE = ½mv²<br>PE = mgh<br>P = W/t</div>
-          <h3>🧪 Chemistry</h3>
-          <div class="example-box">PV = nRT (Ideal Gas)<br>pH = -log[H⁺]<br>n = m/M (moles)</div>
-        </div>
-      </div>`;
-  }
-}
-
-function pomoStart() {
-  if (pomoInterval) return;
-  pomoInterval = setInterval(()=>{
-    if (pomoSecs <= 0) {
-      pomoPause();
-      if (pomoMode==='work') { pomoSecs=5*60; pomoMode='break'; }
-      else { pomoSecs=25*60; pomoMode='work'; }
-    }
-    pomoSecs--;
-    const m=Math.floor(pomoSecs/60), s=pomoSecs%60;
-    document.getElementById('pomoTime').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-    document.getElementById('pomoLbl').textContent = pomoMode==='work'?'Study Time 📚':'Break Time ☕';
-  },1000);
-}
-function pomoPause() { clearInterval(pomoInterval); pomoInterval=null; }
-function pomoReset() { pomoPause(); pomoSecs=25*60; pomoMode='work'; document.getElementById('pomoTime').textContent='25:00'; document.getElementById('pomoLbl').textContent='Study Time'; }
-function calcCountdown() {
-  const d=document.getElementById('examDate').value;
-  const n=document.getElementById('examName').value||'Exam';
-  if(!d) return;
-  const days=Math.ceil((new Date(d)-new Date())/(1000*60*60*24));
-  const r=document.getElementById('cntResult');
-  if(days<0) r.innerHTML=`<p style="color:var(--r)">❌ ${n} ho chuka hai!</p>`;
-  else if(days===0) r.innerHTML=`<p style="color:var(--o)">⚠️ Aaj hai ${n}! Best of luck! 🍀</p>`;
-  else r.innerHTML=`<div class="content-box" style="text-align:center;padding:16px">
-    <div style="font-size:40px;font-weight:700;color:var(--p)">${days}</div>
-    <div style="font-size:14px;font-weight:600">din baaki hain</div>
-    <div style="font-size:13px;color:var(--sub);margin-top:4px">${n} ke liye</div>
-    <p style="font-size:12px;margin-top:10px;color:var(--sub)">
-    ${days>30?'Achi preparation ka time hai!':days>7?'Revision shuru karo!':'Last minute revision karo!'}</p></div>`;
-}
-
-// ── G4F / AI fallback (public endpoint) ───────────────────────────────────
-async function getAIContent(prompt) {
-  // Try public g4f API first
-  try {
-    const r = await fetch('https://api.g4f.in.net/api/chat', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [{role:'user', content: prompt}]
-      }),
-      signal: AbortSignal.timeout(20000)
-    });
-    if (r.ok) {
-      const d = await r.json();
-      const txt = d?.choices?.[0]?.message?.content || d?.response || '';
-      if (txt && txt.length > 30) return txt;
-    }
-  } catch {}
-
-  // Fallback: pollinationsai.com (completely free, no key)
-  try {
-    const encoded = encodeURIComponent(prompt.slice(0,500));
-    const r = await fetch(`https://text.pollinations.ai/${encoded}`, {
-      signal: AbortSignal.timeout(15000)
-    });
-    if (r.ok) {
-      const txt = await r.text();
-      if (txt && txt.length > 20) return txt;
-    }
-  } catch {}
-
-  return '⚠️ AI abhi available nahi. Wikipedia ya NCERT check karo.';
-}
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-function mdHtml(t) {
-  if (!t) return '';
-  return t
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g,'<em>$1</em>')
-    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
-    .replace(/^## (.+)$/gm,'<h3>$1</h3>')
-    .replace(/^• (.+)$/gm,'<p>• $1</p>')
-    .replace(/^- (.+)$/gm,'<p>• $1</p>')
-    .replace(/\n\n/g,'<br><br>')
-    .replace(/`([^`]+)`/g,'<code style="background:#f0f0f0;padding:1px 5px;border-radius:3px;font-size:11px">$1</code>');
-}
-
-function decodeHtml(s) {
-  const e = document.createElement('div'); e.innerHTML = s; return e.textContent;
-}
-
-function shuffle(a) {
-  for (let i = a.length-1; i>0; i--) {
-    const j = Math.floor(Math.random()*(i+1));
-    [a[i],a[j]] = [a[j],a[i]];
-  }
-  return a;
-}
+function mdH(t){if(!t)return'';return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>').replace(/^#{1,3} (.+)$/gm,'<h3>$1</h3>').replace(/^[•\-\*] (.+)$/gm,'<p>• $1</p>').replace(/^\d+\. (.+)$/gm,'<p>$1</p>').replace(/\n\n/g,'<br>').replace(/`([^`]+)`/g,'<code style="background:var(--card2);padding:1px 5px;border-radius:3px;font-size:11px;color:#a78bfa">$1</code>').replace(/\[([^\]]+)\]\((https?[^\)]+)\)/g,'<a href="$2" target="_blank" style="color:var(--p)">$1</a>');}
+function dH(s){const e=document.createElement('div');e.innerHTML=s;return e.textContent;}
+function shuf(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 </script>
 </body>
 </html>
