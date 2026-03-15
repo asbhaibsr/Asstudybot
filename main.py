@@ -9,17 +9,22 @@ from ai import ask_ai, get_updates_text, get_news_text
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
 log = logging.getLogger(__name__)
 
-TOKEN    = os.environ.get("BOT_TOKEN", "YOUR_BOT_TOKEN")
+# ══════════════════════════════════════════════════════════════
+# ⚠️  SIRF YE VALUES BADLO — BAAKI SAB READY HAI  ⚠️
+# ══════════════════════════════════════════════════════════════
+TOKEN    = os.environ.get("BOT_TOKEN",  "YOUR_BOT_TOKEN_HERE")
 OWNER_ID = int(os.environ.get("OWNER_ID", "123456789"))
-UPI_ID   = os.environ.get("UPI_ID", "arsadsaifi8272@ibl")
-PORT     = int(os.environ.get("PORT", "8080"))
+UPI_ID   = os.environ.get("UPI_ID",    "arsadsaifi8272@ibl")
+PORT     = int(os.environ.get("PORT",   "8080"))
 
-# Koyeb automatically gives this URL: https://APP_NAME.koyeb.app
-# MINI_APP_URL set karo Koyeb environment variable mein
-KOYEB_URL = os.environ.get("KOYEB_URL", "")  # e.g. https://mybot.koyeb.app
-MINI_APP  = f"{KOYEB_URL}/app" if KOYEB_URL else os.environ.get("MINI_APP_URL", "")
+# Tumhara Koyeb URL — pehle se set hai!
+KOYEB_URL = os.environ.get(
+    "KOYEB_URL",
+    "https://chilly-ardath-arsadsaifi784-74d0cd5c.koyeb.app"
+)
+MINI_APP = f"{KOYEB_URL}/app"
+# ══════════════════════════════════════════════════════════════
 
-# ── Flask Web Server — Bot + Mini App dono ek saath ──────────────────────────
 flask_app = Flask(__name__, static_folder="static")
 
 @flask_app.route("/")
@@ -33,7 +38,6 @@ def health():
 @flask_app.route("/app")
 @flask_app.route("/app/")
 def mini_app():
-    """Serve the Telegram Mini App"""
     return send_from_directory("static", "index.html")
 
 @flask_app.route("/static/<path:filename>")
@@ -41,10 +45,9 @@ def static_files(filename):
     return send_from_directory("static", filename)
 
 def run_flask():
-    log.info(f"🌐 Flask server starting on port {PORT}")
+    log.info(f"Flask on :{PORT} | App: {MINI_APP}")
     flask_app.run(host="0.0.0.0", port=PORT, debug=False, use_reloader=False)
 
-# ── Conversation States ───────────────────────────────────────────────────────
 SELECT_CLASS, SELECT_COURSE, SELECT_GOAL, MENU, CHATTING, WAIT_SS = range(6)
 
 CLASSES = {
@@ -70,8 +73,8 @@ def kb(items, prefix, cols=2):
 
 def main_kb(premium):
     badge = "💎" if premium else "🆓"
-    rows = [
-        [InlineKeyboardButton("📱 Study Mini App Kholein", web_app=WebAppInfo(url=MINI_APP))] if MINI_APP else [],
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("📱 Study Mini App Kholein", web_app=WebAppInfo(url=MINI_APP))],
         [InlineKeyboardButton("🤖 AI Tutor", callback_data="ai"),
          InlineKeyboardButton("❓ Study Sawal", callback_data="question")],
         [InlineKeyboardButton("📢 Sarkari Updates", callback_data="updates"),
@@ -80,10 +83,8 @@ def main_kb(premium):
          InlineKeyboardButton("👤 Profile", callback_data="profile")],
         [InlineKeyboardButton("📊 Progress", callback_data="progress"),
          InlineKeyboardButton("ℹ️ Help", callback_data="help")],
-    ]
-    return InlineKeyboardMarkup([r for r in rows if r])
+    ])
 
-# ── Start / Onboarding ────────────────────────────────────────────────────────
 async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     u = update.effective_user
     if await db.is_blocked(u.id):
@@ -126,8 +127,7 @@ async def sel_goal(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query; await q.answer()
     await db.update_profile(q.from_user.id,
         ctx.user_data.get("class_type"), ctx.user_data.get("course"), q.data[3:])
-    await q.edit_message_text("🎉 *Profile ready!* Menu se shuru karo 👇",
-        parse_mode="Markdown")
+    await q.edit_message_text("🎉 *Profile ready!* Menu se shuru karo 👇", parse_mode="Markdown")
     ctx.user_data["mode"] = "question"
     return await _send_menu(q, ctx)
 
@@ -138,9 +138,8 @@ async def menu_cmd(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 async def _send_menu(src, ctx):
     uid = src.effective_user.id if hasattr(src,'effective_user') else src.from_user.id
     prem = await db.is_premium(uid)
-    app_line = f"📱 *Study App* → {MINI_APP}\n" if MINI_APP else ""
     txt = (f"🏠 *Main Menu*  {'💎 Premium' if prem else '🆓 Free'}\n\n"
-           f"{app_line}"
+           f"📱 *Study App* → {MINI_APP}\n"
            "🤖 *AI Tutor* — Study sawaal poochho\n"
            "📢 *Updates* — Sarkari jobs/forms/results\n"
            "📰 *News* — Aaj ki Hindi khabar")
@@ -153,7 +152,6 @@ async def _send_menu(src, ctx):
         await ctx.bot.send_message(uid, txt, parse_mode="Markdown", reply_markup=mk)
     return MENU
 
-# ── AI / Question ──────────────────────────────────────────────────────────────
 async def ai_cb(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query; await q.answer()
     uid = q.from_user.id
@@ -163,11 +161,9 @@ async def ai_cb(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     rem = "∞" if prem else str(10 - used)
     await q.edit_message_text(
         f"🤖 *AI Tutor Mode*\nAaj ke bache: *{rem}* sawaal\n\n"
-        "Sirf study topics — Math, Science, GK, Career!\n"
-        "_/menu — wapas_",
+        "Sirf study topics — Math, Science, GK, Career!\n_/menu — wapas_",
         parse_mode="Markdown",
-        reply_markup=InlineKeyboardMarkup([[
-            InlineKeyboardButton("🔙 Menu", callback_data="back_menu")]]))
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Menu", callback_data="back_menu")]]))
     ctx.user_data["mode"] = "ai"
     return CHATTING
 
@@ -181,8 +177,7 @@ async def question_cb(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await q.edit_message_text(
         f"❓ *Study Sawal Mode*\nAaj ke bache: *{rem}*\n\nSawal type karo!\n_/menu — wapas_",
         parse_mode="Markdown",
-        reply_markup=InlineKeyboardMarkup([[
-            InlineKeyboardButton("🔙 Menu", callback_data="back_menu")]]))
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Menu", callback_data="back_menu")]]))
     ctx.user_data["mode"] = "question"
     return CHATTING
 
@@ -223,7 +218,6 @@ async def handle_text(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("🔙 Menu", callback_data="back_menu")]]))
     return CHATTING
 
-# ── Sarkari Updates ───────────────────────────────────────────────────────────
 async def show_updates(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query; await q.answer()
     await q.edit_message_text("⏳ Sarkari updates la raha hoon...")
@@ -285,7 +279,6 @@ async def show_news_cat(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("🔙 News", callback_data="news")]]))
     return MENU
 
-# ── Premium ────────────────────────────────────────────────────────────────────
 async def premium_info(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query; await q.answer()
     await q.edit_message_text(
@@ -296,16 +289,14 @@ async def premium_info(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "1️⃣ UPI pe ₹199 bhejo\n2️⃣ Screenshot lo\n3️⃣ Neeche button dabao",
         parse_mode="Markdown",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("✅ Pay kar diya – Screenshot Bhejo",
-                callback_data="prem_paid")],
+            [InlineKeyboardButton("✅ Pay kar diya – Screenshot Bhejo", callback_data="prem_paid")],
             [InlineKeyboardButton("🔙 Menu", callback_data="back_menu")]]))
     return MENU
 
 async def prem_paid(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query; await q.answer()
     await q.edit_message_text(
-        "📸 *Screenshot Bhejo Is Chat Mein!*\n\n"
-        "Owner verify karega, 1-2 ghante mein active hoga! 🔔",
+        "📸 *Screenshot Bhejo Is Chat Mein!*\n\nOwner verify karega, 1-2 ghante mein active hoga! 🔔",
         parse_mode="Markdown")
     ctx.user_data["mode"] = "screenshot"
     return WAIT_SS
@@ -313,20 +304,16 @@ async def prem_paid(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 async def handle_screenshot(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     uid = update.effective_user.id; u = update.effective_user
     cap = (f"💳 *Premium Request!*\n👤 {u.first_name}\n🆔 `{uid}`\n"
-           f"@{u.username or 'N/A'}\n\n`/addpremium {uid}` – approve")
+           f"@{u.username or 'N/A'}\n\n`/addpremium {uid}` – approve karo")
     try:
         if update.message.photo:
-            await ctx.bot.forward_message(OWNER_ID,
-                update.message.chat_id, update.message.message_id)
+            await ctx.bot.forward_message(OWNER_ID, update.message.chat_id, update.message.message_id)
         await ctx.bot.send_message(OWNER_ID, cap, parse_mode="Markdown")
-    except Exception as e:
-        log.error(f"Forward error: {e}")
-    await update.message.reply_text(
-        "✅ Request bhej di! 1-2 ghante mein active hoga. 🔔")
+    except Exception as e: log.error(f"Forward error: {e}")
+    await update.message.reply_text("✅ Request bhej di! 1-2 ghante mein active hoga. 🔔")
     ctx.user_data["mode"] = "question"
     return MENU
 
-# ── Profile / Progress ─────────────────────────────────────────────────────────
 async def profile_cb(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query; await q.answer()
     uid = q.from_user.id; ud = await db.get_user(uid); prem = await db.is_premium(uid)
@@ -350,28 +337,25 @@ async def progress_cb(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query; await q.answer()
     uid = q.from_user.id; ud = await db.get_user(uid)
     t = ud.get("total_q",0) if ud else 0
-    lv = ("🌱 Beginner" if t<50 else "⭐ Intermediate"
-          if t<150 else "🔥 Advanced" if t<300 else "🏆 Expert")
+    lv = ("🌱 Beginner" if t<50 else "⭐ Intermediate" if t<150 else "🔥 Advanced" if t<300 else "🏆 Expert")
     nx = 50 if t<50 else 150 if t<150 else 300 if t<300 else "MAX"
     await q.edit_message_text(
         f"📊 *Progress*\n\n🏅 {lv}\n❓ Total: {t}\n🎯 Next: {nx}\n\n"
         "🌱 0+ | ⭐ 50+ | 🔥 150+ | 🏆 300+",
         parse_mode="Markdown",
-        reply_markup=InlineKeyboardMarkup([[
-            InlineKeyboardButton("🔙 Menu", callback_data="back_menu")]]))
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Menu", callback_data="back_menu")]]))
     return MENU
 
 async def help_cb(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query; await q.answer()
-    app_url = f"\n🌐 Web App: {MINI_APP}" if MINI_APP else ""
     await q.edit_message_text(
         f"ℹ️ *@IndiaStudyAI\\_Bot Help*\n\n"
         "/start /menu /profile /premium\n\n"
         "*Free:* 10 sawaal/din, 10 AI/din, news unlimited\n"
-        f"*Premium ₹199:* Sab unlimited{app_url}",
+        f"*Premium ₹199:* Sab unlimited\n\n"
+        f"🌐 Web App: {MINI_APP}",
         parse_mode="Markdown",
-        reply_markup=InlineKeyboardMarkup([[
-            InlineKeyboardButton("🔙 Menu", callback_data="back_menu")]]))
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Menu", callback_data="back_menu")]]))
     return MENU
 
 async def back_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -381,27 +365,21 @@ async def back_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 async def update_profile(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query; await q.answer()
-    await q.edit_message_text("Class dobara select karo:",
-        reply_markup=kb(CLASSES, "cl_"))
+    await q.edit_message_text("Class dobara select karo:", reply_markup=kb(CLASSES, "cl_"))
     return SELECT_CLASS
 
-# ── Admin Commands ─────────────────────────────────────────────────────────────
 async def cmd_addpremium(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != OWNER_ID: return
-    if not ctx.args:
-        await update.message.reply_text("Usage: /addpremium <id> [days]"); return
+    if not ctx.args: await update.message.reply_text("Usage: /addpremium <id> [days]"); return
     uid = int(ctx.args[0]); days = int(ctx.args[1]) if len(ctx.args)>1 else 30
     await db.set_premium(uid, days)
-    try:
-        await ctx.bot.send_message(uid,
-            "🎉 *Premium active!* Unlimited padhai karo!", parse_mode="Markdown")
+    try: await ctx.bot.send_message(uid, "🎉 *Premium active!* Unlimited padhai karo!", parse_mode="Markdown")
     except: pass
     await update.message.reply_text(f"✅ Premium: {uid} ({days} days)")
 
 async def cmd_removepremium(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != OWNER_ID: return
-    if not ctx.args:
-        await update.message.reply_text("Usage: /removepremium <id>"); return
+    if not ctx.args: await update.message.reply_text("Usage: /removepremium <id>"); return
     uid = int(ctx.args[0]); await db.remove_premium(uid)
     try: await ctx.bot.send_message(uid, "ℹ️ Premium khatam. Renew karo /menu se.")
     except: pass
@@ -427,42 +405,36 @@ async def cmd_stats(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != OWNER_ID: return
     s = await db.stats()
     await update.message.reply_text(
-        f"📊 *Stats*\n\n👥 Users: {s['total']}\n💎 Premium: {s['premium']}\n"
+        f"📊 *Bot Stats*\n\n👥 Users: {s['total']}\n💎 Premium: {s['premium']}\n"
         f"🚫 Blocked: {s['blocked']}\n❓ Questions: {s['questions']}\n\n"
-        f"🌐 App URL: {MINI_APP or 'Not set'}\n\n"
-        "Commands:\n/addpremium <id> [days]\n/removepremium <id>\n"
+        f"🌐 Mini App: {MINI_APP}\n\n"
+        "📋 *Admin Commands:*\n/addpremium <id> [days]\n/removepremium <id>\n"
         "/block <id> | /unblock <id>\n/broadcast <msg>",
         parse_mode="Markdown")
 
 async def cmd_broadcast(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != OWNER_ID: return
-    if not ctx.args:
-        await update.message.reply_text("Usage: /broadcast <msg>"); return
+    if not ctx.args: await update.message.reply_text("Usage: /broadcast <msg>"); return
     msg = " ".join(ctx.args); users = await db.all_users()
     sm = await update.message.reply_text(f"📢 Bhej raha hoon... 0/{len(users)}")
     sent = fail = 0
     for i, u in enumerate(users):
         try:
-            await ctx.bot.send_message(u["user_id"],
-                f"📢 *Suchna:*\n\n{msg}", parse_mode="Markdown")
+            await ctx.bot.send_message(u["user_id"], f"📢 *Suchna:*\n\n{msg}", parse_mode="Markdown")
             sent += 1
         except: fail += 1
         if (i+1) % 25 == 0:
             try: await sm.edit_text(f"📢 {i+1}/{len(users)}...")
             except: pass
-    await sm.edit_text(f"✅ Done! ✅{sent} ❌{fail}")
+    await sm.edit_text(f"✅ Done!\n✅ Bheja: {sent}\n❌ Failed: {fail}")
 
-# ── Init & Main ────────────────────────────────────────────────────────────────
 async def post_init(app):
     await db.connect()
-    log.info(f"✅ Bot ready! Mini App: {MINI_APP or 'NOT SET'}")
+    log.info(f"✅ Bot ready! Mini App: {MINI_APP}")
 
 def main():
-    # Flask web server — background thread
     t = threading.Thread(target=run_flask, daemon=True)
     t.start()
-
-    # Telegram bot — main thread
     app = Application.builder().token(TOKEN).post_init(post_init).build()
     ch = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
@@ -509,7 +481,6 @@ def main():
         ("unblock", cmd_unblock), ("stats", cmd_stats), ("broadcast", cmd_broadcast)
     ]:
         app.add_handler(CommandHandler(cmd, fn))
-
     log.info("🚀 Bot polling shuru!")
     app.run_polling(allowed_updates=Update.ALL_TYPES)
 
