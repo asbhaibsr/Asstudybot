@@ -276,7 +276,8 @@ async def handle_text(update:Update,ctx:ContextTypes.DEFAULT_TYPE):
     try: await wait.delete()
     except: pass
     # WhatsApp share option for answers
-    share_url=f"https://wa.me/?text={('📚 IndiaStudyAI Answer:\n\n'+resp[:400]).replace(' ','+')}"
+    _share_text=('📚 IndiaStudyAI Answer:\n\n'+resp[:400]).replace(' ','+')
+    share_url=f"https://wa.me/?text={_share_text}"
     await update.message.reply_text(resp,parse_mode="Markdown",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("✅ Helpful",callback_data="fb_good"),
