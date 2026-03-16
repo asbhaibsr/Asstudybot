@@ -7,159 +7,148 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-:root{--p:#7c3aed;--p2:#a855f7;--g:#10b981;--r:#ef4444;--o:#f59e0b;
-  --bg:#09090f;--card:#111128;--card2:#1a1a35;--txt:#f1f5f9;--sub:#8892a4;--brd:#252545;--glow:#7c3aed33}
-body.light{--bg:#f0ebff;--card:#fff;--card2:#f5f0ff;--txt:#1e1b4b;--sub:#6b7280;--brd:#ddd6fe}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden}
-.page{display:none;min-height:100vh;padding-bottom:24px}.page.active{display:block}
-/* HOME HEADER */
+:root{--p:#7c3aed;--p2:#a855f7;--g:#10b981;--r:#ef4444;--o:#f59e0b;--bg:#09090f;--card:#111128;--card2:#1a1a35;--txt:#f1f5f9;--sub:#8892a4;--brd:#252545;--glow:#7c3aed33;--shadow:0 4px 20px rgba(0,0,0,.4)}
+body.light{--bg:#f0ebff;--card:#fff;--card2:#f5f0ff;--txt:#1e1b4b;--sub:#6b7280;--brd:#ddd6fe;--shadow:0 4px 20px rgba(124,58,237,.15)}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden;transition:background .3s}
+.page{display:none;min-height:100vh;padding-bottom:80px}.page.active{display:block}
 .home-hdr{background:linear-gradient(135deg,#0f0f23,#1a0a3d);padding:20px 18px 24px;position:relative;overflow:hidden}
-.home-hdr::before{content:'';position:absolute;right:-40px;top:-40px;width:180px;height:180px;background:radial-gradient(circle,#7c3aed33,transparent);border-radius:50%}
-.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;position:relative;z-index:1}
+.home-hdr::before{content:'';position:absolute;right:-40px;top:-40px;width:200px;height:200px;background:radial-gradient(circle,#7c3aed33,transparent);border-radius:50%;pointer-events:none}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:1}
 .brand h1{font-size:20px;font-weight:900;background:linear-gradient(135deg,#c4b5fd,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .brand p{font-size:11px;color:rgba(255,255,255,.55);margin-top:2px}
 .hdr-actions{display:flex;gap:8px}
-.icon-btn{width:40px;height:40px;border-radius:11px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;transition:.15s}
+.icon-btn{width:40px;height:40px;border-radius:11px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;transition:.15s}
 .icon-btn:active{transform:scale(.88)}
-.stats-strip{display:flex;gap:10px;position:relative;z-index:1}
-.stat-pill{flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:10px 8px;text-align:center}
-.stat-pill .sn{font-size:17px;font-weight:800;margin-bottom:2px}
-.stat-pill .sl{font-size:9px;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.3px}
-/* BIG GRID BUTTONS */
-.main-grid{padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.big-btn{background:var(--card);border:1.5px solid var(--brd);border-radius:18px;padding:20px 14px;text-align:center;cursor:pointer;transition:.2s;position:relative;overflow:hidden;min-height:110px;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.big-btn:active{transform:scale(.94);border-color:var(--p)}
-.bb-ico{font-size:34px;margin-bottom:9px;position:relative;z-index:1}
-.bb-title{font-size:13px;font-weight:800;position:relative;z-index:1}
-.bb-sub{font-size:10px;color:var(--sub);margin-top:4px;position:relative;z-index:1}
-.big-btn.featured{background:linear-gradient(135deg,#1a0a3d,#2d1065);border-color:#7c3aed55;grid-column:span 2;flex-direction:row;gap:16px;padding:20px;min-height:80px;text-align:left}
-.big-btn.featured .bb-ico{font-size:40px;margin-bottom:0;flex-shrink:0}
-.big-btn.featured .bb-info .bb-title{font-size:15px}
+.stats-strip{display:flex;gap:8px;position:relative;z-index:1}
+.stat-pill{flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:10px 6px;text-align:center}
+.stat-pill .sn{font-size:15px;font-weight:800;margin-bottom:2px}
+.stat-pill .sl{font-size:9px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.3px}
+.api-bar{position:relative;z-index:1;margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
+.api-badge{font-size:9px;padding:3px 8px;border-radius:20px;font-weight:700;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.7)}
+.api-badge.on{background:#10b98122;border-color:#10b98155;color:#6ee7b7}
+.main-grid{padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.big-btn{background:var(--card);border:1.5px solid var(--brd);border-radius:18px;padding:18px 12px;text-align:center;cursor:pointer;transition:.2s;position:relative;overflow:hidden;min-height:105px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:var(--shadow)}
+.big-btn:active{transform:scale(.94);border-color:var(--p);box-shadow:0 0 20px var(--glow)}
+.bb-ico{font-size:32px;margin-bottom:8px;position:relative;z-index:1}
+.bb-title{font-size:12px;font-weight:800;position:relative;z-index:1;line-height:1.3}
+.bb-sub{font-size:9px;color:var(--sub);margin-top:4px;position:relative;z-index:1}
+.big-btn.featured{background:linear-gradient(135deg,#1a0a3d,#2d1065);border-color:#7c3aed55;grid-column:span 2;flex-direction:row;gap:14px;padding:18px;min-height:80px;text-align:left}
+.big-btn.featured .bb-ico{font-size:38px;margin-bottom:0;flex-shrink:0}
+.big-btn.featured .bb-info .bb-title{font-size:14px}
 .big-btn.featured .bb-info .bb-sub{color:rgba(255,255,255,.6)}
-.badge-new{position:absolute;top:10px;right:10px;background:var(--r);color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;z-index:2}
-.badge-hot{position:absolute;top:10px;right:10px;background:var(--o);color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;z-index:2}
-/* PAGE HEADER */
-.page-hdr{background:var(--card);padding:14px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:200;border-bottom:1px solid var(--brd)}
-.back-btn{width:38px;height:38px;border-radius:10px;background:var(--card2);border:1px solid var(--brd);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;flex-shrink:0}
+.badge-new{position:absolute;top:8px;right:8px;background:var(--r);color:#fff;font-size:8px;font-weight:800;padding:2px 6px;border-radius:20px;z-index:2}
+.badge-hot{position:absolute;top:8px;right:8px;background:var(--o);color:#fff;font-size:8px;font-weight:800;padding:2px 6px;border-radius:20px;z-index:2}
+.page-hdr{background:var(--card);padding:12px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:200;border-bottom:1px solid var(--brd);box-shadow:0 2px 10px rgba(0,0,0,.3)}
+.back-btn{width:36px;height:36px;border-radius:10px;background:var(--card2);border:1px solid var(--brd);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0;transition:.15s}
 .back-btn:active{transform:scale(.88)}
 .page-title{font-size:15px;font-weight:800;flex:1}
-.page-body{padding:14px}
-/* SUBJECT GRID */
+.page-body{padding:12px}
+.lang-strip{display:flex;gap:6px;margin-bottom:12px}
+.ls-btn{flex:1;padding:8px;border-radius:10px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid var(--brd);background:var(--card2);color:var(--sub);text-align:center;transition:.15s}
+.ls-btn.on{background:var(--p);color:#fff;border-color:var(--p)}
 .subj-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
-.subj-card{background:var(--card);border:1.5px solid var(--brd);border-radius:14px;padding:16px 8px;text-align:center;cursor:pointer;transition:.2s}
+.subj-card{background:var(--card);border:1.5px solid var(--brd);border-radius:14px;padding:14px 6px;text-align:center;cursor:pointer;transition:.2s;box-shadow:var(--shadow)}
 .subj-card:active{border-color:var(--p);transform:scale(.93)}
-.sc-ico{font-size:28px;margin-bottom:6px}
-.sc-name{font-size:11px;font-weight:700}
-/* TOPIC LIST */
-.topic-item{background:var(--card);border:1.5px solid var(--brd);border-radius:13px;padding:14px 16px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:.15s}
+.sc-ico{font-size:26px;margin-bottom:5px}.sc-name{font-size:10px;font-weight:700}
+.topic-item{background:var(--card);border:1.5px solid var(--brd);border-radius:13px;padding:12px 14px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:.15s;box-shadow:var(--shadow)}
 .topic-item:active{border-color:var(--p);background:var(--card2)}
-.topic-ico{width:44px;height:44px;border-radius:11px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
-.topic-title{font-size:13px;font-weight:700;margin-bottom:2px}
-.topic-sub{font-size:10px;color:var(--sub)}
-/* CONTENT */
-.content-card{background:var(--card);border-radius:16px;padding:18px;border:1px solid var(--brd);margin-bottom:12px}
-.content-card h2{font-size:16px;color:var(--p);margin-bottom:12px;font-weight:800}
-.cbody{font-size:13px;line-height:1.8;color:#c4c9d4}
-.cbody h3{color:var(--txt);margin:14px 0 6px;font-size:14px;font-weight:700}
-.cbody p{margin-bottom:8px}
-.cbody strong{color:#c4b5fd}
-.ex-box{background:var(--card2);border-left:3px solid var(--p);padding:10px 14px;border-radius:0 10px 10px 0;margin:10px 0;font-size:12px;font-family:monospace;line-height:1.7;color:#94a3b8}
-/* CHAT */
-.chat-page{display:flex;flex-direction:column;height:100vh}
-.chat-hdr{background:var(--card);padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--brd);flex-shrink:0}
-.ci-name{font-size:14px;font-weight:800}
-.ci-status{font-size:10px;color:var(--g)}
-.chat-msgs{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:9px}
-.msg{padding:11px 14px;border-radius:16px;max-width:88%;font-size:13px;line-height:1.65;word-break:break-word;animation:msgIn .2s ease}
-@keyframes msgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.topic-ico{width:42px;height:42px;border-radius:10px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.topic-title{font-size:12px;font-weight:700;margin-bottom:2px;line-height:1.3}
+.topic-sub{font-size:9px;color:var(--sub)}
+.content-card{background:var(--card);border-radius:16px;padding:16px;border:1px solid var(--brd);margin-bottom:12px;box-shadow:var(--shadow)}
+.content-card h2{font-size:15px;color:var(--p);margin-bottom:12px;font-weight:800}
+.cbody{font-size:12px;line-height:1.8;color:#c4c9d4}
+.cbody h3{color:var(--txt);margin:12px 0 6px;font-size:13px;font-weight:700}
+.cbody p{margin-bottom:8px}.cbody strong{color:#c4b5fd}
+.ex-box{background:var(--card2);border-left:3px solid var(--p);padding:10px 12px;border-radius:0 10px 10px 0;margin:8px 0;font-size:11px;font-family:monospace;line-height:1.7;color:#94a3b8;overflow-x:auto}
+.chat-page{display:flex;flex-direction:column;height:100vh;max-height:100vh}
+.chat-hdr{background:var(--card);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--brd);flex-shrink:0;box-shadow:0 2px 10px rgba(0,0,0,.3)}
+.ci-name{font-size:13px;font-weight:800}.ci-status{font-size:10px;color:var(--g)}
+.chat-msgs{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px;scroll-behavior:smooth}
+.msg{padding:10px 13px;border-radius:16px;max-width:90%;font-size:12px;line-height:1.7;word-break:break-word;animation:msgIn .18s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .msg.u{background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
 .msg.b{background:var(--card);color:var(--txt);border:1px solid var(--brd);align-self:flex-start;border-bottom-left-radius:4px}
 .msg.typing{color:var(--sub);background:var(--card2);border:1px solid var(--brd)}
-.chat-in-wrap{background:var(--card);border-top:1px solid var(--brd);padding:10px 14px;flex-shrink:0}
-.lang-toggle{display:flex;gap:6px;margin-bottom:8px}
-.lt-btn{flex:1;padding:7px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid var(--brd);background:var(--card2);color:var(--sub);text-align:center;transition:.15s}
-.lt-btn.on{background:var(--p);color:#fff;border-color:var(--p)}
-.chat-row{display:flex;gap:8px}
-.chat-inp{flex:1;background:var(--card2);border:1.5px solid var(--brd);border-radius:12px;padding:11px 14px;color:var(--txt);font-size:13px;outline:none}
+.chat-in-wrap{background:var(--card);border-top:1px solid var(--brd);padding:8px 12px;flex-shrink:0}
+.chat-row{display:flex;gap:7px;align-items:flex-end}
+.chat-inp{flex:1;background:var(--card2);border:1.5px solid var(--brd);border-radius:12px;padding:10px 12px;color:var(--txt);font-size:13px;outline:none;resize:none;max-height:100px;min-height:42px;transition:.15s;font-family:inherit}
 .chat-inp:focus{border-color:var(--p)}
 .chat-inp::placeholder{color:var(--sub)}
-.send-btn{background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;border:none;padding:11px 16px;border-radius:12px;cursor:pointer;font-size:15px}
+.send-btn{background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;border:none;padding:10px 14px;border-radius:12px;cursor:pointer;font-size:16px;flex-shrink:0;height:42px;transition:.15s}
 .send-btn:active{transform:scale(.9)}
-/* QUIZ */
-.quiz-card{background:var(--card);border-radius:16px;padding:18px;border:1px solid var(--brd)}
-.qprog{height:5px;background:var(--brd);border-radius:3px;margin-bottom:16px;overflow:hidden}
+.upload-btn{background:var(--card2);border:1.5px solid var(--brd);color:var(--sub);padding:10px 12px;border-radius:12px;cursor:pointer;font-size:16px;flex-shrink:0;height:42px;display:flex;align-items:center;justify-content:center;transition:.15s}
+.upload-btn:active{transform:scale(.9);border-color:var(--p)}
+.chat-actions{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.ca-btn{padding:6px 10px;border-radius:8px;font-size:10px;font-weight:700;cursor:pointer;border:1.5px solid var(--brd);background:var(--card2);color:var(--sub);transition:.15s}
+.ca-btn.on{background:var(--p);color:#fff;border-color:var(--p)}
+.quiz-card{background:var(--card);border-radius:16px;padding:16px;border:1px solid var(--brd);box-shadow:var(--shadow)}
+.qprog{height:5px;background:var(--brd);border-radius:3px;margin-bottom:14px;overflow:hidden}
 .qprog-bar{height:100%;background:linear-gradient(90deg,var(--p),var(--p2));border-radius:3px;transition:.4s}
-.qmeta{font-size:11px;color:var(--sub);margin-bottom:12px;font-weight:600}
-.qtext{font-size:14px;font-weight:700;margin-bottom:14px;line-height:1.5}
-.qopt{background:var(--card2);border:2px solid var(--brd);border-radius:13px;padding:14px 16px;margin-bottom:10px;cursor:pointer;font-size:13px;transition:.15s;display:flex;align-items:center;gap:10px}
+.qmeta{font-size:10px;color:var(--sub);margin-bottom:10px;font-weight:600}
+.qtext{font-size:13px;font-weight:700;margin-bottom:12px;line-height:1.5}
+.qopt{background:var(--card2);border:2px solid var(--brd);border-radius:12px;padding:12px 14px;margin-bottom:9px;cursor:pointer;font-size:12px;transition:.15s;display:flex;align-items:center;gap:9px}
 .qopt:active{border-color:var(--p)}
 .qopt.ok{border-color:var(--g)!important;background:#10b98120;color:#6ee7b7;font-weight:700}
 .qopt.no{border-color:var(--r)!important;background:#ef444420;color:#fca5a5}
 .qopt.done{pointer-events:none}
-.qltr{width:30px;height:30px;border-radius:8px;background:var(--brd);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0}
-/* FLASHCARD */
-.fc-card{background:linear-gradient(135deg,var(--p),var(--p2));border-radius:20px;padding:30px 20px;text-align:center;min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;margin-bottom:14px;box-shadow:0 10px 30px var(--glow)}
+.qltr{width:28px;height:28px;border-radius:8px;background:var(--brd);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+.fc-card{background:linear-gradient(135deg,var(--p),var(--p2));border-radius:20px;padding:28px 18px;text-align:center;min-height:175px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;margin-bottom:12px;box-shadow:0 10px 30px var(--glow);transition:.2s}
 .fc-card:active{transform:scale(.97)}
 .fc-card.flipped{background:linear-gradient(135deg,var(--g),#059669)}
-.fc-q{font-size:16px;font-weight:800;margin-bottom:8px;line-height:1.4}
-.fc-hint{font-size:11px;opacity:.7}
-.fc-a{font-size:13px;line-height:1.65}
-.fc-dots{display:flex;justify-content:center;gap:6px;margin-bottom:12px}
+.fc-q{font-size:15px;font-weight:800;margin-bottom:8px;line-height:1.4}
+.fc-hint{font-size:10px;opacity:.7}
+.fc-a{font-size:12px;line-height:1.7;text-align:left}
+.fc-dots{display:flex;justify-content:center;gap:6px;margin-bottom:10px}
 .fc-dot{width:8px;height:8px;border-radius:50%;background:var(--brd);transition:.2s}
 .fc-dot.on{background:var(--p)}
-/* NEWS */
-.news-card{background:var(--card);border-radius:14px;padding:14px 16px;margin-bottom:10px;border:1px solid var(--brd);border-left:3px solid var(--p);cursor:pointer}
+.news-card{background:var(--card);border-radius:13px;padding:12px 14px;margin-bottom:9px;border:1px solid var(--brd);border-left:3px solid var(--p);cursor:pointer;transition:.15s;box-shadow:var(--shadow)}
 .news-card:active{background:var(--card2)}
-.nc-title{font-size:13px;font-weight:700;margin-bottom:5px;line-height:1.45}
-.nc-meta{font-size:10px;color:var(--sub);margin-bottom:5px}
-.nc-btn{font-size:11px;color:var(--p);font-weight:700}
-/* TAGS */
-.tags{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
-.tag{padding:8px 16px;border-radius:22px;font-size:12px;font-weight:700;cursor:pointer;transition:.15s;border:1.5px solid var(--brd)}
+.nc-title{font-size:12px;font-weight:700;margin-bottom:4px;line-height:1.4}
+.nc-meta{font-size:9px;color:var(--sub);margin-bottom:4px}
+.nc-link{font-size:10px;color:var(--p);font-weight:700;text-decoration:none}
+.tags{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.tag{padding:7px 14px;border-radius:22px;font-size:11px;font-weight:700;cursor:pointer;transition:.15s;border:1.5px solid var(--brd)}
 .tag.on{background:var(--p);color:#fff;border-color:var(--p)}
 .tag:not(.on){background:var(--card);color:var(--sub)}
 .tag:active{transform:scale(.93)}
-/* POMO */
-.pomo-wrap{text-align:center;padding:10px 0}
-.pomo-ring{width:175px;height:175px;margin:0 auto 18px;position:relative}
+.pomo-wrap{text-align:center;padding:8px 0}
+.pomo-ring{width:170px;height:170px;margin:0 auto 16px;position:relative}
 .pomo-ring svg{transform:rotate(-90deg)}
 .pomo-c{fill:none;stroke-width:10}
 .pomo-bg{stroke:var(--brd)}.pomo-fg{stroke:url(#pg);stroke-linecap:round;transition:stroke-dashoffset .5s}
 .pomo-ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.pomo-t{font-size:36px;font-weight:900}.pomo-l{font-size:11px;color:var(--sub);margin-top:3px}
-/* BUTTONS */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 20px;border-radius:12px;cursor:pointer;font-size:13px;font-weight:700;border:none;transition:.15s;text-decoration:none}
+.pomo-t{font-size:34px;font-weight:900}.pomo-l{font-size:10px;color:var(--sub);margin-top:3px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 18px;border-radius:12px;cursor:pointer;font-size:12px;font-weight:700;border:none;transition:.15s;text-decoration:none;font-family:inherit}
 .btn:active{transform:scale(.94)}
 .btn-p{background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;box-shadow:0 4px 15px var(--glow)}
 .btn-s{background:var(--card2);color:var(--p);border:1.5px solid var(--p)}
 .btn-g{background:var(--g);color:#fff}
-.btn-sm{padding:8px 14px;font-size:11px;border-radius:10px}
+.btn-r{background:var(--r);color:#fff}
+.btn-sm{padding:7px 12px;font-size:10px;border-radius:9px}
 .btn-full{width:100%;justify-content:center;margin-bottom:8px}
-/* TOOL */
-.tool-card{background:var(--card);border:1.5px solid var(--brd);border-radius:16px;padding:18px;margin-bottom:12px}
-.tool-title{font-size:14px;font-weight:800;margin-bottom:12px}
-.inp{width:100%;background:var(--card2);border:1.5px solid var(--brd);border-radius:12px;padding:12px 14px;color:var(--txt);font-size:13px;outline:none;margin-bottom:10px}
+.tool-card{background:var(--card);border:1.5px solid var(--brd);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
+.tool-title{font-size:13px;font-weight:800;margin-bottom:11px}
+.inp{width:100%;background:var(--card2);border:1.5px solid var(--brd);border-radius:12px;padding:11px 12px;color:var(--txt);font-size:12px;outline:none;margin-bottom:9px;font-family:inherit;transition:.15s}
 .inp:focus{border-color:var(--p)}
 .inp::placeholder{color:var(--sub)}
-/* SCORE */
-.score-circle{width:110px;height:110px;border-radius:50%;border:5px solid var(--p);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 16px}
-.score-n{font-size:32px;font-weight:900;color:var(--p)}
-.score-l{font-size:10px;color:var(--sub);margin-top:2px}
-/* LOADER */
-.loader{text-align:center;padding:30px;color:var(--sub)}
-.spin{width:34px;height:34px;border:3px solid var(--brd);border-top-color:var(--p);border-radius:50%;animation:sp .7s linear infinite;margin:0 auto 12px}
+textarea.inp{resize:vertical;min-height:80px}
+.score-circle{width:105px;height:105px;border-radius:50%;border:5px solid var(--p);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 14px;box-shadow:0 0 20px var(--glow)}
+.score-n{font-size:30px;font-weight:900;color:var(--p)}.score-l{font-size:9px;color:var(--sub);margin-top:2px}
+.loader{text-align:center;padding:28px;color:var(--sub)}
+.spin{width:32px;height:32px;border:3px solid var(--brd);border-top-color:var(--p);border-radius:50%;animation:sp .7s linear infinite;margin:0 auto 10px}
 @keyframes sp{to{transform:rotate(360deg)}}
-.empty{text-align:center;padding:40px 16px;color:var(--sub)}
-.empty .ei{font-size:48px;margin-bottom:12px}
-/* UTILS */
+.empty{text-align:center;padding:36px 14px;color:var(--sub)}
+.empty .ei{font-size:44px;margin-bottom:10px}
 .mt8{margin-top:8px}.mt12{margin-top:12px}.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}
 .flex{display:flex}.gap6{gap:6px}.gap8{gap:8px}.fw{flex-wrap:wrap}
-.bold{font-weight:700}.small{font-size:11px}.muted{color:var(--sub)}.center{text-align:center}
+.bold{font-weight:700}.small{font-size:10px}.muted{color:var(--sub)}.center{text-align:center}
+.divider{height:1px;background:var(--brd);margin:12px 0}
 </style>
 </head>
 <body>
 
-<!-- ═══ HOME PAGE ═══ -->
+<!-- HOME -->
 <div class="page active" id="pg-home">
   <div class="home-hdr">
     <div class="hdr-top">
@@ -174,44 +163,28 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       <div class="stat-pill"><div class="sn" style="color:#fbbf24" id="hStrk">1</div><div class="sl">🔥 Streak</div></div>
       <div class="stat-pill"><div class="sn" style="color:#34d399" id="hBadge">🌱</div><div class="sl">Badge</div></div>
     </div>
+    <div class="api-bar" id="apiBar"></div>
   </div>
   <div class="main-grid">
     <div class="big-btn featured" onclick="showPage('pg-ai-tutor')">
       <div class="bb-ico">🤖</div>
-      <div class="bb-info"><div class="bb-title">AI Study Tutor</div><div class="bb-sub">Class → Subject → Padhai shuru!</div></div>
+      <div class="bb-info"><div class="bb-title">AI Study Tutor</div><div class="bb-sub">Class → Subject → Chat!</div></div>
     </div>
-    <div class="big-btn" onclick="showPage('pg-study')">
-      <span class="badge-hot">HOT</span>
-      <div class="bb-ico">📚</div><div class="bb-title">Study Subjects</div><div class="bb-sub">10 Subjects</div>
-    </div>
-    <div class="big-btn" onclick="showPage('pg-quiz')">
-      <div class="bb-ico">🎯</div><div class="bb-title">Daily Quiz</div><div class="bb-sub">Points Kamao</div>
-    </div>
-    <div class="big-btn" onclick="showPage('pg-updates')">
-      <span class="badge-new">LIVE</span>
-      <div class="bb-ico">📢</div><div class="bb-title">Sarkari Updates</div><div class="bb-sub">Jobs·Forms·Results</div>
-    </div>
-    <div class="big-btn" onclick="showPage('pg-news')">
-      <span class="badge-new">LIVE</span>
-      <div class="bb-ico">📰</div><div class="bb-title">Hindi News</div><div class="bb-sub">Taaza Khabar</div>
-    </div>
-    <div class="big-btn" onclick="showPage('pg-flash')">
-      <div class="bb-ico">🃏</div><div class="bb-title">Flash Cards</div><div class="bb-sub">Quick Revision</div>
-    </div>
-    <div class="big-btn" onclick="showPage('pg-tools')">
-      <div class="bb-ico">🛠️</div><div class="bb-title">Study Tools</div><div class="bb-sub">PDF·Notes·Resume</div>
-    </div>
-    <div class="big-btn" onclick="showPage('pg-notes')">
-      <div class="bb-ico">📝</div><div class="bb-title">Meri Notes</div><div class="bb-sub">Save·Share·PDF</div>
-    </div>
-    <div class="big-btn" onclick="showPage('pg-settings')" style="grid-column:span 2;min-height:70px;flex-direction:row;gap:12px">
-      <div class="bb-ico" style="font-size:28px;margin-bottom:0">⚙️</div>
+    <div class="big-btn" onclick="showPage('pg-study')"><span class="badge-hot">HOT</span><div class="bb-ico">📚</div><div class="bb-title">Study Subjects</div><div class="bb-sub">10+ Subjects</div></div>
+    <div class="big-btn" onclick="showPage('pg-quiz')"><div class="bb-ico">🎯</div><div class="bb-title">Daily Quiz</div><div class="bb-sub">Points Kamao</div></div>
+    <div class="big-btn" onclick="showPage('pg-updates')"><span class="badge-new">LIVE</span><div class="bb-ico">📢</div><div class="bb-title">Sarkari Updates</div><div class="bb-sub">Jobs·Forms·Results</div></div>
+    <div class="big-btn" onclick="showPage('pg-news')"><span class="badge-new">LIVE</span><div class="bb-ico">📰</div><div class="bb-title">Hindi News</div><div class="bb-sub">Taaza Khabar</div></div>
+    <div class="big-btn" onclick="showPage('pg-flash')"><div class="bb-ico">🃏</div><div class="bb-title">Flash Cards</div><div class="bb-sub">Quick Revision</div></div>
+    <div class="big-btn" onclick="showPage('pg-tools')"><div class="bb-ico">🛠️</div><div class="bb-title">Study Tools</div><div class="bb-sub">10+ Tools</div></div>
+    <div class="big-btn" onclick="showPage('pg-notes')"><div class="bb-ico">📝</div><div class="bb-title">Meri Notes</div><div class="bb-sub">Save·PDF·Share</div></div>
+    <div class="big-btn" onclick="showPage('pg-settings')" style="grid-column:span 2;min-height:60px;flex-direction:row;gap:10px">
+      <div class="bb-ico" style="font-size:24px;margin-bottom:0">⚙️</div>
       <div><div class="bb-title">Settings</div><div class="bb-sub">Language · Theme · About</div></div>
     </div>
   </div>
 </div>
 
-<!-- ═══ SEARCH PAGE ═══ -->
+<!-- SEARCH -->
 <div class="page" id="pg-search">
   <div class="page-hdr">
     <div class="back-btn" onclick="showPage('pg-home')">←</div>
@@ -223,84 +196,91 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   </div>
 </div>
 
-<!-- ═══ AI TUTOR PAGE ═══ -->
+<!-- AI TUTOR -->
 <div class="page" id="pg-ai-tutor">
-  <div class="page-hdr">
-    <div class="back-btn" onclick="showPage('pg-home')">←</div>
-    <div class="page-title">🤖 AI Study Tutor</div>
-  </div>
-  <!-- Step 1: Class -->
-  <div id="ait-step1" class="page-body">
-    <div style="background:linear-gradient(135deg,#7c3aed22,#a855f722);border-radius:14px;padding:14px;margin-bottom:16px;border:1px solid #7c3aed44">
-      <div class="bold mb8">🎓 Apni class choose karo 👇</div>
-      <div class="small muted">AI tumhari class ke hisab se step-by-step padhayega!</div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:10px">
-      <button class="btn btn-p btn-full" onclick="aitStep2('Class 1-5')">📚 Class 1-5 — Primary School</button>
-      <button class="btn btn-p btn-full" onclick="aitStep2('Class 6-8')">📖 Class 6-8 — Middle School</button>
-      <button class="btn btn-p btn-full" onclick="aitStep2('Class 9-10')">🎓 Class 9-10 — Secondary</button>
-      <button class="btn btn-p btn-full" onclick="aitStep2('Class 11-12')">🏫 Class 11-12 — Senior Secondary</button>
-      <button class="btn btn-s btn-full" onclick="aitStep2('College')">🎓 College / University</button>
-      <button class="btn btn-s btn-full" onclick="aitStep2('Adult Learner')">👨‍💼 Adult / Job Preparation</button>
-    </div>
-  </div>
-  <!-- Step 2: Subject -->
-  <div id="ait-step2" style="display:none" class="page-body">
-    <div style="background:var(--card);border-radius:12px;padding:12px;margin-bottom:14px;border:1px solid var(--brd)">
-      <span id="ait-cls-show" class="bold"></span><span class="muted small"> — Subject choose karo 👇</span>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <button class="btn btn-p btn-full" onclick="aitStep3('Mathematics')">➕ Maths</button>
-      <button class="btn btn-p btn-full" onclick="aitStep3('Science')">🔬 Science</button>
-      <button class="btn btn-p btn-full" onclick="aitStep3('Hindi')">🇮🇳 Hindi</button>
-      <button class="btn btn-p btn-full" onclick="aitStep3('English')">🔤 English</button>
-      <button class="btn btn-p btn-full" onclick="aitStep3('Physics')">⚛️ Physics</button>
-      <button class="btn btn-p btn-full" onclick="aitStep3('Chemistry')">🧪 Chemistry</button>
-      <button class="btn btn-p btn-full" onclick="aitStep3('Biology')">🧬 Biology</button>
-      <button class="btn btn-p btn-full" onclick="aitStep3('History SST')">🌍 History/SST</button>
-      <button class="btn btn-p btn-full" onclick="aitStep3('Computer Science')">💻 Computer</button>
-      <button class="btn btn-s btn-full" onclick="aitStep3('General Knowledge')">🧠 GK / Current Affairs</button>
-    </div>
-    <button class="btn btn-s btn-sm mt12" onclick="aitBack1()">← Class Change Karo</button>
-  </div>
-  <!-- Step 3: Chat -->
-  <div id="ait-step3" class="chat-page" style="display:none">
-    <div class="chat-hdr">
-      <div class="back-btn" onclick="aitBack2()">←</div>
-      <div style="flex:1">
-        <div class="ci-name" id="ait-chat-title">AI Tutor</div>
-        <div class="ci-status">● Online — 8 AI Sources</div>
+  <div id="ait-container">
+    <div id="ait-step1">
+      <div class="page-hdr">
+        <div class="back-btn" onclick="showPage('pg-home')">←</div>
+        <div class="page-title">🤖 AI Study Tutor</div>
       </div>
-      <div class="icon-btn" onclick="cycleLang()">🌐</div>
-    </div>
-    <div class="chat-msgs" id="aitMsgs">
-      <div class="msg b">🙏 Namaste! Main aapka AI Study Tutor hoon.<br><br>Basic se advanced — step by step samjhaunga! 🎓<br><br>Apna sawaal type karo 👇</div>
-    </div>
-    <div class="chat-in-wrap">
-      <div class="lang-toggle">
-        <div class="lt-btn on" id="lHi" onclick="setChatLang('hi')">🇮🇳 Hindi</div>
-        <div class="lt-btn" id="lEn" onclick="setChatLang('en')">🇬🇧 English</div>
-        <div class="lt-btn" id="lMix" onclick="setChatLang('mix')">🔀 Hinglish</div>
+      <div class="page-body">
+        <div style="background:linear-gradient(135deg,#7c3aed22,#a855f722);border-radius:14px;padding:14px;margin-bottom:14px;border:1px solid #7c3aed44">
+          <div class="bold mb8">🎓 Apni class choose karo 👇</div>
+          <div class="small muted">AI tumhari class ke hisab se padhayega!</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <button class="btn btn-p btn-full" onclick="aitStep2('Class 1-5')">📚 Class 1-5 — Primary</button>
+          <button class="btn btn-p btn-full" onclick="aitStep2('Class 6-8')">📖 Class 6-8 — Middle</button>
+          <button class="btn btn-p btn-full" onclick="aitStep2('Class 9-10')">🎓 Class 9-10 — Secondary</button>
+          <button class="btn btn-p btn-full" onclick="aitStep2('Class 11-12')">🏫 Class 11-12 — Senior</button>
+          <button class="btn btn-s btn-full" onclick="aitStep2('College')">🎓 College / University</button>
+          <button class="btn btn-s btn-full" onclick="aitStep2('Adult Learner')">👨‍💼 Adult / Job Prep</button>
+        </div>
       </div>
-      <div class="chat-row">
-        <input class="chat-inp" id="aitIn" placeholder="Sawaal type karo..." onkeypress="if(event.key==='Enter')sendAIT()">
-        <button class="send-btn" onclick="sendAIT()">➤</button>
+    </div>
+    <div id="ait-step2" style="display:none">
+      <div class="page-hdr">
+        <div class="back-btn" onclick="aitBack1()">←</div>
+        <div class="page-title" id="ait-step2-title">Subject Choose</div>
+      </div>
+      <div class="page-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+          <button class="btn btn-p btn-full" onclick="aitStep3('Mathematics')">➕ Maths</button>
+          <button class="btn btn-p btn-full" onclick="aitStep3('Science')">🔬 Science</button>
+          <button class="btn btn-p btn-full" onclick="aitStep3('Hindi')">🇮🇳 Hindi</button>
+          <button class="btn btn-p btn-full" onclick="aitStep3('English')">🔤 English</button>
+          <button class="btn btn-p btn-full" onclick="aitStep3('Physics')">⚛️ Physics</button>
+          <button class="btn btn-p btn-full" onclick="aitStep3('Chemistry')">🧪 Chemistry</button>
+          <button class="btn btn-p btn-full" onclick="aitStep3('Biology')">🧬 Biology</button>
+          <button class="btn btn-p btn-full" onclick="aitStep3('History SST')">🌍 History/SST</button>
+          <button class="btn btn-p btn-full" onclick="aitStep3('Computer Science')">💻 Computer</button>
+          <button class="btn btn-p btn-full" onclick="aitStep3('GK Current Affairs')">🧠 GK/CA</button>
+          <button class="btn btn-s btn-full" style="grid-column:span 2" onclick="aitStep3('All Subjects')">📚 All Subjects</button>
+        </div>
+      </div>
+    </div>
+    <div id="ait-step3" class="chat-page" style="display:none">
+      <div class="chat-hdr">
+        <div class="back-btn" onclick="aitBack2()">←</div>
+        <div style="flex:1">
+          <div class="ci-name" id="ait-chat-title">AI Tutor</div>
+          <div class="ci-status" id="ait-api-status">● Online — Multi AI</div>
+        </div>
+        <div class="icon-btn" onclick="cycleLang()">🌐</div>
+      </div>
+      <div class="chat-msgs" id="aitMsgs"></div>
+      <div class="chat-in-wrap">
+        <div class="chat-actions">
+          <span class="ca-btn on" id="lHi"  onclick="setChatLang('hi')">🇮🇳 Hindi</span>
+          <span class="ca-btn"    id="lEn"  onclick="setChatLang('en')">🇬🇧 English</span>
+          <span class="ca-btn"    id="lMix" onclick="setChatLang('mix')">🔀 Mix</span>
+          <span class="ca-btn"    id="noteModeBtn" onclick="toggleNoteMode()">📝 Notes OFF</span>
+        </div>
+        <div class="chat-row">
+          <label class="upload-btn" for="aitFileIn" title="Image bhejo">📎</label>
+          <input type="file" id="aitFileIn" accept="image/*" style="display:none" onchange="sendAITImage(this)">
+          <textarea class="chat-inp" id="aitIn" placeholder="Sawaal type karo..." rows="1"
+            onkeypress="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAIT()}"
+            oninput="autoResize(this)"></textarea>
+          <button class="send-btn" onclick="sendAIT()">➤</button>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ═══ STUDY PAGE ═══ -->
+<!-- STUDY -->
 <div class="page" id="pg-study">
   <div class="page-hdr">
-    <div class="back-btn" onclick="showPage('pg-home')">←</div>
-    <div class="page-title">📚 Study Subjects</div>
+    <div class="back-btn" id="study-back-btn" onclick="handleStudyBack()">←</div>
+    <div class="page-title" id="study-page-title">📚 Study Subjects</div>
     <div class="icon-btn" onclick="showPage('pg-search')">🔍</div>
   </div>
   <div id="study-home" class="page-body">
-    <div class="flex gap8 mb12">
-      <button class="btn btn-p btn-sm" id="sLangHi" onclick="setStudyLang('hi')">🇮🇳 Hindi</button>
-      <button class="btn btn-s btn-sm" id="sLangEn" onclick="setStudyLang('en')">🇬🇧 English</button>
+    <div class="lang-strip">
+      <div class="ls-btn on" id="sLangHi" onclick="setStudyLang('hi')">🇮🇳 Hindi</div>
+      <div class="ls-btn"    id="sLangEn" onclick="setStudyLang('en')">🇬🇧 English</div>
     </div>
     <div class="subj-grid">
       <div class="subj-card" onclick="openSub('math')"><div class="sc-ico">➕</div><div class="sc-name">Maths</div></div>
@@ -315,46 +295,33 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       <div class="subj-card" onclick="openSub('gk')"><div class="sc-ico">🧠</div><div class="sc-name">GK 2026</div></div>
     </div>
   </div>
-  <div id="study-topics" style="display:none" class="page-body">
-    <div class="flex gap8 mb12" style="align-items:center">
-      <button class="btn btn-s btn-sm" onclick="backToSubj()">← Subjects</button>
-      <span id="subj-title" class="bold" style="font-size:14px"></span>
-    </div>
-    <div id="topic-list"></div>
-  </div>
+  <div id="study-topics" style="display:none" class="page-body"><div id="topic-list"></div></div>
   <div id="study-content" style="display:none" class="page-body">
-    <div class="flex gap8 mb12">
-      <button class="btn btn-s btn-sm" onclick="backToTopics()">← Topics</button>
-      <button class="btn btn-p btn-sm" onclick="showPage('pg-ai-tutor')">🤖 AI Se Poochho</button>
+    <div class="lang-strip">
+      <div class="ls-btn on" id="cLangHi" onclick="setContentLang('hi')">🇮🇳 Hindi</div>
+      <div class="ls-btn"    id="cLangEn" onclick="setContentLang('en')">🇬🇧 English</div>
     </div>
     <div id="content-box"></div>
   </div>
 </div>
 
-<!-- ═══ QUIZ PAGE ═══ -->
+<!-- QUIZ -->
 <div class="page" id="pg-quiz">
-  <div class="page-hdr">
-    <div class="back-btn" onclick="showPage('pg-home')">←</div>
-    <div class="page-title">🎯 Daily Quiz</div>
-  </div>
+  <div class="page-hdr"><div class="back-btn" onclick="showPage('pg-home')">←</div><div class="page-title">🎯 Daily Quiz</div></div>
   <div class="page-body">
     <div class="flex gap8 mb12">
-      <div style="flex:1;background:var(--card);border-radius:11px;padding:10px;text-align:center;border:1px solid var(--brd)">
-        <div class="bold" style="font-size:18px;color:var(--p)" id="qzToday">0</div><div class="small muted">Aaj</div></div>
-      <div style="flex:1;background:var(--card);border-radius:11px;padding:10px;text-align:center;border:1px solid var(--brd)">
-        <div class="bold" style="font-size:18px;color:var(--g)" id="qzAcc">—</div><div class="small muted">Accuracy</div></div>
-      <div style="flex:1;background:var(--card);border-radius:11px;padding:10px;text-align:center;border:1px solid var(--brd)">
-        <div class="bold" style="font-size:18px;color:var(--o)" id="qzStrk">0🔥</div><div class="small muted">Streak</div></div>
+      <div style="flex:1;background:var(--card);border-radius:11px;padding:10px;text-align:center;border:1px solid var(--brd)"><div class="bold" style="font-size:17px;color:var(--p)" id="qzToday">0</div><div class="small muted">Aaj</div></div>
+      <div style="flex:1;background:var(--card);border-radius:11px;padding:10px;text-align:center;border:1px solid var(--brd)"><div class="bold" style="font-size:17px;color:var(--g)" id="qzAcc">—</div><div class="small muted">Accuracy</div></div>
+      <div style="flex:1;background:var(--card);border-radius:11px;padding:10px;text-align:center;border:1px solid var(--brd)"><div class="bold" style="font-size:17px;color:var(--o)" id="qzStrk">0🔥</div><div class="small muted">Streak</div></div>
     </div>
     <div id="quiz-home">
-      <div class="small muted mb12">Live API se questions — Fresh har baar!</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
         <button class="btn btn-p btn-full" onclick="startQuiz('science',17)">🔬 Science</button>
         <button class="btn btn-p btn-full" onclick="startQuiz('gk',9)">🧠 GK</button>
         <button class="btn btn-p btn-full" onclick="startQuiz('computer',18)">💻 Computer</button>
         <button class="btn btn-p btn-full" onclick="startQuiz('history',23)">🌍 History</button>
         <button class="btn btn-p btn-full" onclick="startQuiz('geo',22)">🗺️ Geography</button>
-        <button class="btn btn-s btn-full" onclick="startQuiz('math',19)">➕ Mathematics</button>
+        <button class="btn btn-s btn-full" onclick="startQuiz('math',19)">➕ Maths</button>
       </div>
     </div>
     <div id="quiz-play" style="display:none">
@@ -364,13 +331,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   </div>
 </div>
 
-<!-- ═══ FLASH CARDS PAGE ═══ -->
+<!-- FLASHCARDS -->
 <div class="page" id="pg-flash">
-  <div class="page-hdr">
-    <div class="back-btn" onclick="showPage('pg-home')">←</div>
-    <div class="page-title">🃏 Flash Cards</div>
-  </div>
+  <div class="page-hdr"><div class="back-btn" onclick="showPage('pg-home')">←</div><div class="page-title">🃏 Flash Cards</div></div>
   <div class="page-body">
+    <div class="lang-strip">
+      <div class="ls-btn on" id="fcLangHi" onclick="setFCLang('hi')">🇮🇳 Hindi</div>
+      <div class="ls-btn"    id="fcLangEn" onclick="setFCLang('en')">🇬🇧 English</div>
+    </div>
     <div class="tags" id="fcTags">
       <span class="tag on" onclick="loadFC('physics',this)">⚛️ Physics</span>
       <span class="tag" onclick="loadFC('chem',this)">🧪 Chem</span>
@@ -384,33 +352,43 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   </div>
 </div>
 
-<!-- ═══ UPDATES PAGE ═══ -->
+<!-- UPDATES -->
 <div class="page" id="pg-updates">
   <div class="page-hdr">
     <div class="back-btn" onclick="showPage('pg-home')">←</div>
     <div class="page-title">📢 Sarkari Updates</div>
+    <button class="btn btn-s btn-sm" onclick="refreshUpd()">🔄</button>
   </div>
   <div class="page-body">
+    <div class="lang-strip">
+      <div class="ls-btn on" id="updLangHi" onclick="setUpdLang('hi')">🇮🇳 Hindi</div>
+      <div class="ls-btn"    id="updLangEn" onclick="setUpdLang('en')">🇬🇧 English</div>
+    </div>
     <div class="tags">
       <span class="tag on" onclick="loadUpd('all',this)">🔥 Sabhi</span>
       <span class="tag" onclick="loadUpd('jobs',this)">💼 Jobs</span>
       <span class="tag" onclick="loadUpd('forms',this)">📋 Forms</span>
       <span class="tag" onclick="loadUpd('results',this)">📊 Results</span>
       <span class="tag" onclick="loadUpd('yojana',this)">🏛️ Yojana</span>
-      <span class="tag" onclick="loadUpd('admit',this)">🪪 Admit Card</span>
+      <span class="tag" onclick="loadUpd('admit',this)">🪪 Admit</span>
       <span class="tag" onclick="loadUpd('scholar',this)">🎓 Scholar</span>
     </div>
     <div id="upd-cont"><div class="loader"><div class="spin"></div>Live data la raha hoon...</div></div>
   </div>
 </div>
 
-<!-- ═══ NEWS PAGE ═══ -->
+<!-- NEWS -->
 <div class="page" id="pg-news">
   <div class="page-hdr">
     <div class="back-btn" onclick="showPage('pg-home')">←</div>
     <div class="page-title">📰 Hindi News</div>
+    <button class="btn btn-s btn-sm" onclick="refreshNews()">🔄</button>
   </div>
   <div class="page-body">
+    <div class="lang-strip">
+      <div class="ls-btn on" id="newsLangHi" onclick="setNewsLang('hi')">🇮🇳 Hindi</div>
+      <div class="ls-btn"    id="newsLangEn" onclick="setNewsLang('en')">🇬🇧 English</div>
+    </div>
     <div class="tags">
       <span class="tag on" onclick="loadNews('india',this)">🇮🇳 India</span>
       <span class="tag" onclick="loadNews('pol',this)">🏛️ Rajniti</span>
@@ -422,66 +400,63 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   </div>
 </div>
 
-<!-- ═══ TOOLS PAGE ═══ -->
+<!-- TOOLS -->
 <div class="page" id="pg-tools">
-  <div class="page-hdr">
-    <div class="back-btn" onclick="showPage('pg-home')">←</div>
-    <div class="page-title">🛠️ Study Tools</div>
-  </div>
+  <div class="page-hdr"><div class="back-btn" onclick="showPage('pg-home')">←</div><div class="page-title">🛠️ Study Tools</div></div>
   <div class="page-body">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-      <div class="big-btn" onclick="showTool('pomo')" style="min-height:90px"><div class="bb-ico">⏱️</div><div class="bb-title">Pomodoro</div><div class="bb-sub">Focus Timer</div></div>
-      <div class="big-btn" onclick="showTool('cd')" style="min-height:90px"><div class="bb-ico">📅</div><div class="bb-title">Exam Countdown</div><div class="bb-sub">Din Baaki</div></div>
-      <div class="big-btn" onclick="showTool('formula')" style="min-height:90px"><div class="bb-ico">📐</div><div class="bb-title">Formulas</div><div class="bb-sub">Math·Physics</div></div>
-      <div class="big-btn" onclick="showTool('notes-ai')" style="min-height:90px"><div class="bb-ico">📝</div><div class="bb-title">AI Notes</div><div class="bb-sub">Topic se notes</div></div>
-      <div class="big-btn" onclick="showTool('links')" style="min-height:90px"><div class="bb-ico">🔗</div><div class="bb-title">Free Resources</div><div class="bb-sub">NCERT·Khan</div></div>
-      <div class="big-btn" onclick="showTool('resume')" style="min-height:90px"><div class="bb-ico">📄</div><div class="bb-title">Resume Builder</div><div class="bb-sub">AI se banao</div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px">
+      <div class="big-btn" onclick="showTool('pomo')"     style="min-height:88px"><div class="bb-ico">⏱️</div><div class="bb-title">Pomodoro</div><div class="bb-sub">Focus Timer</div></div>
+      <div class="big-btn" onclick="showTool('cd')"       style="min-height:88px"><div class="bb-ico">📅</div><div class="bb-title">Exam Countdown</div><div class="bb-sub">Din Baaki</div></div>
+      <div class="big-btn" onclick="showTool('formula')"  style="min-height:88px"><div class="bb-ico">📐</div><div class="bb-title">Formulas</div><div class="bb-sub">Math·Physics</div></div>
+      <div class="big-btn" onclick="showTool('notes-ai')" style="min-height:88px"><div class="bb-ico">📝</div><div class="bb-title">AI Notes</div><div class="bb-sub">Topic se notes</div></div>
+      <div class="big-btn" onclick="showTool('resume')"   style="min-height:88px"><div class="bb-ico">📄</div><div class="bb-title">Resume</div><div class="bb-sub">AI se banao</div></div>
+      <div class="big-btn" onclick="showTool('vocab')"    style="min-height:88px"><div class="bb-ico">📖</div><div class="bb-title">Vocabulary</div><div class="bb-sub">Word builder</div></div>
+      <div class="big-btn" onclick="showTool('mindmap')"  style="min-height:88px"><div class="bb-ico">🗺️</div><div class="bb-title">Mind Map</div><div class="bb-sub">Visual learning</div></div>
+      <div class="big-btn" onclick="showTool('qpaper')"   style="min-height:88px"><div class="bb-ico">📋</div><div class="bb-title">Q. Paper</div><div class="bb-sub">AI se banao</div></div>
+      <div class="big-btn" onclick="showTool('links')"    style="min-height:88px"><div class="bb-ico">🔗</div><div class="bb-title">Free Resources</div><div class="bb-sub">NCERT·Khan</div></div>
+      <div class="big-btn" onclick="showTool('ocr')"      style="min-height:88px"><div class="bb-ico">📷</div><div class="bb-title">Image→Text</div><div class="bb-sub">OCR Tool</div></div>
     </div>
     <div id="tool-content"></div>
   </div>
 </div>
 
-<!-- ═══ NOTES PAGE ═══ -->
+<!-- NOTES -->
 <div class="page" id="pg-notes">
   <div class="page-hdr">
     <div class="back-btn" onclick="showPage('pg-home')">←</div>
     <div class="page-title">📝 Meri Notes</div>
     <button class="btn btn-p btn-sm" onclick="showNewNote()">+ Naya</button>
   </div>
-  <div class="page-body">
-    <div id="notes-list"><div class="loader"><div class="spin"></div>Notes load ho rahe hain...</div></div>
-  </div>
+  <div class="page-body"><div id="notes-list"></div></div>
 </div>
 
-<!-- ═══ SETTINGS PAGE ═══ -->
+<!-- SETTINGS -->
 <div class="page" id="pg-settings">
-  <div class="page-hdr">
-    <div class="back-btn" onclick="showPage('pg-home')">←</div>
-    <div class="page-title">⚙️ Settings</div>
-  </div>
+  <div class="page-hdr"><div class="back-btn" onclick="showPage('pg-home')">←</div><div class="page-title">⚙️ Settings</div></div>
   <div class="page-body">
     <div class="tool-card">
       <div class="tool-title">🌐 Language / Bhasha</div>
       <div class="flex gap8 fw">
-        <button class="btn btn-p btn-sm" id="slHi" onclick="setAppLang('hi')">🇮🇳 Hindi</button>
-        <button class="btn btn-s btn-sm" id="slEn" onclick="setAppLang('en')">🇬🇧 English</button>
-        <button class="btn btn-s btn-sm" id="slMix" onclick="setAppLang('mix')">🔀 Hinglish</button>
+        <button class="btn btn-sm" id="slHi"  onclick="setAppLang('hi')">🇮🇳 Hindi</button>
+        <button class="btn btn-sm" id="slEn"  onclick="setAppLang('en')">🇬🇧 English</button>
+        <button class="btn btn-sm" id="slMix" onclick="setAppLang('mix')">🔀 Hinglish</button>
       </div>
+      <div class="small muted mt8" id="langStatus">Hindi selected ✅</div>
     </div>
     <div class="tool-card">
       <div class="tool-title">🎨 Theme</div>
       <div class="flex gap8">
-        <button class="btn btn-p btn-sm" onclick="setTheme('dark')">🌙 Dark Mode</button>
-        <button class="btn btn-s btn-sm" onclick="setTheme('light')">☀️ Light Mode</button>
+        <button class="btn btn-p btn-sm" onclick="setTheme('dark')">🌙 Dark</button>
+        <button class="btn btn-s btn-sm" onclick="setTheme('light')">☀️ Light</button>
       </div>
     </div>
     <div class="tool-card">
       <div class="tool-title">ℹ️ About</div>
       <div class="cbody">
         <p>📚 <strong>IndiaStudyAI</strong> — India's #1 Free Study Bot</p>
-        <p>🤖 AI: Gemini · Mistral · DeepSeek + 5 Free AIs</p>
-        <p>📢 News: Live RSS + Google News + Scraping</p>
-        <p>💾 Cache: Sab 1 din save rehta hai</p>
+        <p>🤖 AI: Gemini · Mistral · DeepSeek · Groq + 4 Free AIs (Race mode)</p>
+        <p>📢 News: Live RSS + Google News + Web Scraping</p>
+        <p>💾 Cache: 24 ghante save</p>
         <p>🔗 <a href="https://t.me/IndiaStudyAI_Bot" target="_blank" style="color:var(--p)">@IndiaStudyAI_Bot</a></p>
       </div>
     </div>
@@ -489,14 +464,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 </div>
 
 <script>
-// ── Telegram ──────────────────────────────────────────────────────────────────
-const tg=window.Telegram?.WebApp;
+// ══ TELEGRAM ══
+const tg = window.Telegram?.WebApp;
 if(tg){tg.ready();tg.expand();try{tg.setHeaderColor('#09090f');tg.setBackgroundColor('#09090f');}catch{}}
-const USER=tg?.initDataUnsafe?.user||{};
-const uName=USER.first_name||'Student';
+const USER = tg?.initDataUnsafe?.user || {};
+const uName = USER.first_name || 'Student';
 
-// ── Theme ─────────────────────────────────────────────────────────────────────
-let isDark=localStorage.getItem('theme')!=='light';
+// ══ THEME ══
+let isDark = localStorage.getItem('theme') !== 'light';
 function applyTheme(){
   document.body.classList.toggle('light',!isDark);
   const b=document.getElementById('themeBtn');if(b)b.textContent=isDark?'🌙':'☀️';
@@ -507,48 +482,89 @@ function toggleTheme(){isDark=!isDark;applyTheme();}
 function setTheme(t){isDark=(t==='dark');applyTheme();}
 applyTheme();
 
-// ── Language ──────────────────────────────────────────────────────────────────
+// ══ LANGUAGE ══
 let appLang=localStorage.getItem('lang')||'hi';
-let chatLang=appLang,studyLang=appLang;
+let chatLang=appLang,studyLang=appLang,fcLang=appLang,updLang=appLang,newsLang=appLang;
+
 function setAppLang(l){
-  appLang=chatLang=studyLang=l;
+  appLang=chatLang=studyLang=fcLang=updLang=newsLang=l;
   localStorage.setItem('lang',l);
   ['Hi','En','Mix'].forEach(x=>{
     const e=document.getElementById('sl'+x);
-    if(e)e.className=l===x.toLowerCase()?'btn btn-p btn-sm':'btn btn-s btn-sm';
+    if(e)e.className='btn btn-sm'+(l===x.toLowerCase()?' btn-p':' btn-s');
   });
+  const st=document.getElementById('langStatus');
+  if(st)st.textContent={hi:'🇮🇳 Hindi selected ✅',en:'🇬🇧 English selected ✅',mix:'🔀 Hinglish selected ✅'}[l];
 }
 function setChatLang(l){
   chatLang=l;
-  ['Hi','En','Mix'].forEach(x=>{
-    const e=document.getElementById('l'+x);if(e)e.className='lt-btn'+(l===x.toLowerCase()?' on':'');
+  ['lHi','lEn','lMix'].forEach((id,i)=>{
+    const e=document.getElementById(id);if(e)e.className='ca-btn'+(l===['hi','en','mix'][i]?' on':'');
   });
+}
+function cycleLang(){
+  const ls=['hi','en','mix'];
+  setChatLang(ls[(ls.indexOf(chatLang)+1)%3]);
 }
 function setStudyLang(l){
   studyLang=l;
-  const hi=document.getElementById('sLangHi');const en=document.getElementById('sLangEn');
-  if(hi)hi.className='btn btn-sm'+(l==='hi'?' btn-p':' btn-s');
-  if(en)en.className='btn btn-sm'+(l==='en'?' btn-p':' btn-s');
+  const h=document.getElementById('sLangHi'),en=document.getElementById('sLangEn');
+  if(h)h.className='ls-btn'+(l==='hi'?' on':'');
+  if(en)en.className='ls-btn'+(l==='en'?' on':'');
 }
-function cycleLang(){const ls=['hi','en','mix'];setChatLang(ls[(ls.indexOf(chatLang)+1)%3]);}
+function setContentLang(l){
+  studyLang=l;
+  const h=document.getElementById('cLangHi'),en=document.getElementById('cLangEn');
+  if(h)h.className='ls-btn'+(l==='hi'?' on':'');
+  if(en)en.className='ls-btn'+(l==='en'?' on':'');
+  if(curTopic&&curSubKey)loadTopic(curSubKey,curTopic,true);
+}
+function setFCLang(l){
+  fcLang=l;
+  const h=document.getElementById('fcLangHi'),en=document.getElementById('fcLangEn');
+  if(h)h.className='ls-btn'+(l==='hi'?' on':'');
+  if(en)en.className='ls-btn'+(l==='en'?' on':'');
+  const onTag=document.querySelector('#fcTags .tag.on');
+  if(onTag)onTag.click();
+}
+function setUpdLang(l){
+  updLang=l;
+  const h=document.getElementById('updLangHi'),en=document.getElementById('updLangEn');
+  if(h)h.className='ls-btn'+(l==='hi'?' on':'');
+  if(en)en.className='ls-btn'+(l==='en'?' on':'');
+}
+function setNewsLang(l){
+  newsLang=l;
+  const h=document.getElementById('newsLangHi'),en=document.getElementById('newsLangEn');
+  if(h)h.className='ls-btn'+(l==='hi'?' on':'');
+  if(en)en.className='ls-btn'+(l==='en'?' on':'');
+}
 setAppLang(appLang);
 
-// ── Stats ─────────────────────────────────────────────────────────────────────
+// ══ STATS ══
 function loadStats(){
-  const pts=localStorage.getItem('uPts')||'50';
-  const strk=localStorage.getItem('uStrk')||'1';
+  const pts=parseInt(localStorage.getItem('uPts')||'50');
+  const strk=parseInt(localStorage.getItem('uStrk')||'1');
   const bgs=['🌱','🔥','⭐','💪','🏆','👑'];
-  const bi=Math.min(Math.floor(parseInt(pts)/100),bgs.length-1);
+  const bi=Math.min(Math.floor(pts/100),bgs.length-1);
   setEl('hPts',pts+' pts');setEl('hStrk',strk+' din');setEl('hBadge',bgs[bi]);
-  if(USER.first_name)setEl('hdrSub',`Namaste ${uName}! 🎓`);
+  if(USER.first_name)setEl('hdrSub','Namaste '+uName+'! 🎓');
+  // API bar
+  const bar=document.getElementById('apiBar');
+  if(bar){
+    const apis=[
+      {n:'Gemini',k:'GEMINI'},{n:'Mistral',k:'MISTRAL'},{n:'DeepSeek',k:'DEEPSEEK'},
+      {n:'Groq',k:'GROQ'},{n:'FreeAI',k:'FREE'}
+    ];
+    bar.innerHTML=apis.map(a=>`<span class="api-badge on">${a.n}✅</span>`).join('');
+  }
 }
 function setEl(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
 loadStats();
 
-// ── Cache System (1 din = 86400000ms) ────────────────────────────────────────
-function setCache(k,v,ms){
-  try{localStorage.setItem('c_'+k,JSON.stringify({v,e:Date.now()+ms}));}catch{}
-}
+// ══ CACHE ══
+const DAY=86400000,HOUR=3600000;
+function setCache(k,v,ms){try{localStorage.setItem('c_'+k,JSON.stringify({v,e:Date.now()+ms}));}catch{}}
 function getCache(k){
   try{
     const r=JSON.parse(localStorage.getItem('c_'+k)||'null');
@@ -558,25 +574,58 @@ function getCache(k){
   }catch{return null;}
 }
 function clearCache(k){try{localStorage.removeItem('c_'+k);}catch{}}
-const DAY=86400000;const HOUR=3600000;
+function clearCachePrefix(p){Object.keys(localStorage).filter(k=>k.startsWith('c_'+p)).forEach(k=>localStorage.removeItem(k));}
 
-// ── Page Navigation ───────────────────────────────────────────────────────────
+// ══ PAGE NAVIGATION ══
+let studyView='home'; // home | topics | content
+let curSubKey='',curTopic='';
+
 function showPage(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   const pg=document.getElementById(id);if(pg){pg.classList.add('active');window.scrollTo(0,0);}
-  if(id==='pg-updates'&&!document.querySelector('#upd-cont .content-card'))loadUpd('all',document.querySelector('#pg-updates .tag'));
-  if(id==='pg-news'&&!document.querySelector('#news-cont .news-card,#news-cont .content-card'))loadNews('india',document.querySelector('#pg-news .tag'));
-  if(id==='pg-flash'&&!document.querySelector('#fc-cont .fc-card'))loadFC('physics',document.querySelector('#fcTags .tag'));
+  if(id==='pg-updates'){const t=document.querySelector('#pg-updates .tag.on');if(t&&!document.querySelector('#upd-cont .news-card,#upd-cont .content-card'))loadUpd('all',t);}
+  if(id==='pg-news'){const t=document.querySelector('#pg-news .tag.on');if(t&&!document.querySelector('#news-cont .news-card,#news-cont .content-card'))loadNews('india',t);}
+  if(id==='pg-flash'&&!document.querySelector('#fc-cont .fc-card')){const t=document.querySelector('#fcTags .tag.on');if(t)loadFC('physics',t);}
   if(id==='pg-notes')loadNotes();
+  if(id==='pg-ai-tutor')restoreAITSession();
+}
+function handleStudyBack(){
+  if(studyView==='content'){backToTopics();}
+  else if(studyView==='topics'){backToSubj();}
+  else{showPage('pg-home');}
+}
+function setStudyView(v){
+  studyView=v;
+  document.getElementById('study-home').style.display   =(v==='home'   ?'block':'none');
+  document.getElementById('study-topics').style.display  =(v==='topics' ?'block':'none');
+  document.getElementById('study-content').style.display =(v==='content'?'block':'none');
+  const titles={home:'📚 Study Subjects',topics:'📖 Topics',content:'📄 Content'};
+  setEl('study-page-title',titles[v]);
+  window.scrollTo(0,0);
 }
 
-// ── AI TUTOR — 3 Step Flow ────────────────────────────────────────────────────
-let aitClass='',aitSubj='',aitHist=[];
+// ══ AI TUTOR ══
+let aitClass='',aitSubj='',aitHist=[],noteModeOn=false;
+
+function restoreAITSession(){
+  const saved=getCache('ait_session');
+  if(saved&&saved.cls&&saved.subj){
+    aitClass=saved.cls;aitSubj=saved.subj;
+    document.getElementById('ait-step1').style.display='none';
+    document.getElementById('ait-step2').style.display='none';
+    document.getElementById('ait-step3').style.display='flex';
+    setEl('ait-chat-title',aitSubj+' — '+aitClass);
+    const msgs=document.getElementById('aitMsgs');
+    if(msgs&&msgs.children.length===0){
+      addMsg('🙏 Wapas aaye '+uName+'! <strong>'+aitSubj+'</strong> padhai continue karte hain 📚<br>Sawaal type karo 👇','b','aitMsgs');
+    }
+  }
+}
 function aitStep2(cls){
   aitClass=cls;
   document.getElementById('ait-step1').style.display='none';
   document.getElementById('ait-step2').style.display='block';
-  setEl('ait-cls-show',cls);
+  setEl('ait-step2-title','📖 '+cls+' — Subject');
 }
 function aitBack1(){
   document.getElementById('ait-step2').style.display='none';
@@ -586,55 +635,116 @@ function aitStep3(subj){
   aitSubj=subj;aitHist=[];
   document.getElementById('ait-step2').style.display='none';
   document.getElementById('ait-step3').style.display='flex';
-  setEl('ait-chat-title',`${subj} — ${aitClass}`);
+  setEl('ait-chat-title',subj+' — '+aitClass);
+  setEl('ait-api-status','● Online — Multi AI');
+  setCache('ait_session',{cls:aitClass,subj:aitSubj},DAY);
   const msgs=document.getElementById('aitMsgs');
   if(msgs){
     msgs.innerHTML='';
-    addMsg(`🙏 ${uName}! ${aitClass} ke liye <strong>${subj}</strong> padhenge!<br><br>Basic se shuru karte hain — kya poochna hai? 📚`,'b','aitMsgs');
+    addMsg('🙏 '+uName+'! <strong>'+aitClass+'</strong> ke liye <strong>'+subj+'</strong> padhenge!<br><br>Basic se advanced — step by step samjhaunga! 🎓<br><br>Apna sawaal type karo 👇','b','aitMsgs');
   }
+  setChatLang(appLang);
 }
 function aitBack2(){
-  aitSubj='';aitHist=[];
+  aitSubj='';
   document.getElementById('ait-step3').style.display='none';
   document.getElementById('ait-step2').style.display='block';
+  clearCache('ait_session');
+}
+function toggleNoteMode(){
+  noteModeOn=!noteModeOn;
+  const btn=document.getElementById('noteModeBtn');
+  if(btn){btn.textContent='📝 Notes '+(noteModeOn?'ON':'OFF');btn.className='ca-btn'+(noteModeOn?' on':'');}
 }
 async function sendAIT(){
   const inp=document.getElementById('aitIn');
   const txt=inp.value.trim();if(!txt)return;
-  inp.value='';addMsg(txt,'u','aitMsgs');
+  inp.value='';autoResize(inp);
+  addMsg(escH(txt),'u','aitMsgs');
   aitHist.push({role:'user',content:txt});
   const tm=addMsg('🤔 Soch raha hoon...','b typing','aitMsgs');
-  const li=chatLang==='hi'?'Sirf pure Hindi mein jawab do.':chatLang==='en'?'Answer in English only.':'Hindi aur English mix mein jawab do.';
-  const sys=`Expert AI teacher for ${aitClass}, subject: ${aitSubj}. ${li} Step-by-step padhao. Real Indian examples do. Markdown. Year 2026.`;
-  const hist=aitHist.slice(-6).map(m=>`${m.role}: ${m.content}`).join('\n');
+  const li=chatLang==='en'?'Answer only in English.':chatLang==='mix'?'Answer in Hindi-English mix (Hinglish).':'Sirf Hindi mein jawab do.';
+  const sys='Expert AI teacher. Class:'+aitClass+', Subject:'+aitSubj+'. '+li+' Step-by-step with Indian examples. Markdown. Year 2026.';
+  const hist=aitHist.slice(-8).map(m=>m.role+': '+m.content).join('\n');
   try{
-    const r=await getAI(`${sys}\n\n${hist}\nassistant:`,'study');
+    const r=await getAI(sys+'\n\n'+hist+'\nassistant:','study');
     aitHist.push({role:'assistant',content:r});
     tm.remove();
-    const m=addMsg(mdH(r),'b','aitMsgs');m.style.maxWidth='92%';
-  }catch{tm.textContent='⚠️ Error. Dobara try karo.';tm.classList.remove('typing');}
+    const m=addMsg(mdH(r),'b','aitMsgs');
+    m.style.maxWidth='94%';
+    // Append action buttons
+    const actions=document.createElement('div');
+    actions.style.cssText='margin-top:8px;display:flex;gap:6px;flex-wrap:wrap';
+    actions.innerHTML=
+      '<button class="btn btn-s btn-sm" onclick="saveNoteFromMsg(this)">📝 Save Note</button>'+
+      '<button class="btn btn-s btn-sm" onclick="copyMsgText(this)">📋 Copy</button>'+
+      '<button class="btn btn-s btn-sm" style="color:var(--o);border-color:var(--o)" onclick="learnMore(this)">🔍 Aur Jaano</button>';
+    m.appendChild(actions);
+    if(noteModeOn)saveNoteLocal(aitSubj+' — '+txt.slice(0,30),r);
+  }catch(e){tm.textContent='⚠️ Error: '+e.message+'. Dobara try karo.';tm.classList.remove('typing');}
 }
+async function sendAITImage(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async function(e){
+    addMsg('📷 Image bheja ✓','u','aitMsgs');
+    const tm=addMsg('📷 Image process ho rahi hai...','b typing','aitMsgs');
+    const base64=e.target.result.split(',')[1];
+    try{
+      const r=await callGeminiVision(base64,'Is image mein jo bhi text ya content hai usse extract karo aur explain karo. '+chatLang);
+      tm.remove();
+      addMsg(mdH(r),'b','aitMsgs');
+    }catch{
+      tm.textContent='❌ Image process nahi ho paayi. Clear image bhejo.';
+      tm.classList.remove('typing');
+    }
+    input.value='';
+  };
+  reader.readAsDataURL(file);
+}
+function saveNoteFromMsg(btn){
+  const msgEl=btn.closest('.msg');
+  const clone=msgEl.cloneNode(true);
+  clone.querySelectorAll('div,button').forEach(el=>el.remove());
+  const content=msgEl.innerText.replace(/📝 Save Note|📋 Copy|🔍 Aur Jaano/g,'').trim();
+  saveNoteLocal(aitSubj||'AI Answer',content);
+  btn.textContent='✅ Saved!';btn.disabled=true;
+}
+function copyMsgText(btn){
+  const msgEl=btn.closest('.msg');
+  const txt=msgEl.innerText.replace(/📝 Save Note|📋 Copy|🔍 Aur Jaano/g,'').trim();
+  navigator.clipboard?.writeText(txt).then(()=>{btn.textContent='✅ Copied!';setTimeout(()=>btn.textContent='📋 Copy',2000);});
+}
+async function learnMore(btn){
+  const msgEl=btn.closest('.msg');
+  const topic=msgEl.innerText.slice(0,80);
+  btn.textContent='⏳...';btn.disabled=true;
+  const li=chatLang==='en'?'in English':'Hindi mein';
+  const detail=await getAI('Is topic ke baare mein aur detail '+li+' do:\n'+topic+'\n\nFull explanation with examples, history, applications, exam tips. Markdown.','study');
+  addMsg(mdH(detail),'b','aitMsgs');
+  btn.textContent='✅ Done';
+}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,100)+'px';}
 
-// ── SUBJECTS DATA ─────────────────────────────────────────────────────────────
+// ══ SUBJECTS ══
 const SUBS={
-  math:{name:"Mathematics",ic:"➕",topics:["Algebra basics","Geometry shapes","Fractions decimals","Percentage problems","Trigonometry ratios","Statistics data","Probability","Number System","Quadratic Equations","Coordinate Geometry","Arithmetic Progression","Mensuration area volume"]},
-  science:{name:"Science",ic:"🔬",topics:["States of Matter","Force Motion","Gravitation","Work Energy","Sound waves","Light reflection","Electricity basics","Magnetic Effects","Natural Resources","Cell biology","Life Processes"]},
-  physics:{name:"Physics",ic:"⚛️",topics:["Kinematics motion","Newton Laws of Motion","Gravitation universal","Work Energy Theorem","Wave motion","Thermodynamics","Optics lenses mirrors","Electrostatics","Current Electricity","Electromagnetic Induction"]},
-  chemistry:{name:"Chemistry",ic:"🧪",topics:["Atomic Structure","Periodic Table","Chemical Bonding","Acids Bases pH","Metals Non-metals","Carbon Compounds","Chemical Reactions","Electrochemistry","Solutions","Polymers"]},
-  bio:{name:"Biology",ic:"🧬",topics:["Cell organelles","Photosynthesis","Digestive system","Respiratory system","Nervous system","Genetics Mendel","Evolution Darwin","Ecosystem food chain","Reproduction biology","Microorganisms"]},
-  hindi:{name:"Hindi",ic:"🇮🇳",topics:["Hindi Vyakaran","Sandhi types","Samas","Ras kavita","Alankar","Hindi Sahitya","Kabir Das","Tulsidas","Patra lekhan","Nibandh writing"]},
-  english:{name:"English",ic:"🔤",topics:["Tenses 12 types","Parts of speech","Active Passive voice","Direct Indirect Speech","Prepositions","Articles usage","Essay writing","Letter writing","Reading Comprehension","Vocabulary building"]},
-  history:{name:"History/SST",ic:"🌍",topics:["Ancient India Indus Valley","Mughal Empire Akbar","Indian Independence 1947","Constitution of India","French Revolution","World War II timeline","Cold War","UN formation","Indian National Congress","Fundamental Rights India"]},
-  computer:{name:"Computer",ic:"💻",topics:["Computer fundamentals","Hardware Software","Internet networking","Database SQL","Python programming","HTML CSS basics","MS Office","Cybersecurity basics","AI ML intro","Data structures"]},
-  gk:{name:"GK 2026",ic:"🧠",topics:["India geography rivers","Indian states capitals 2026","National symbols India","Science Nobel Prize 2025","World geography continents","Constitution articles","Current affairs India 2026","Sports achievements 2026","Indian economy 2026","G20 world politics"]},
+  math:{name:'Mathematics',ic:'➕',topics:['Algebra basics','Geometry shapes','Fractions decimals','Percentage problems','Trigonometry ratios','Statistics data','Probability','Number System','Quadratic Equations','Coordinate Geometry','Arithmetic Progression','Mensuration']},
+  science:{name:'Science',ic:'🔬',topics:['States of Matter','Force Motion','Gravitation','Work Energy','Sound waves','Light reflection','Electricity basics','Magnetic Effects','Natural Resources','Cell biology','Life Processes']},
+  physics:{name:'Physics',ic:'⚛️',topics:['Kinematics motion','Newton Laws','Gravitation','Work Energy Theorem','Wave motion','Thermodynamics','Optics lenses mirrors','Electrostatics','Current Electricity','Electromagnetic Induction']},
+  chemistry:{name:'Chemistry',ic:'🧪',topics:['Atomic Structure','Periodic Table','Chemical Bonding','Acids Bases pH','Metals Non-metals','Carbon Compounds','Chemical Reactions','Electrochemistry','Solutions','Polymers']},
+  bio:{name:'Biology',ic:'🧬',topics:['Cell organelles','Photosynthesis','Digestive system','Respiratory system','Nervous system','Genetics Mendel','Evolution Darwin','Ecosystem food chain','Reproduction','Microorganisms']},
+  hindi:{name:'Hindi',ic:'🇮🇳',topics:['Hindi Vyakaran','Sandhi types','Samas','Ras kavita','Alankar','Hindi Sahitya','Kabir Das','Tulsidas','Patra lekhan','Nibandh writing']},
+  english:{name:'English',ic:'🔤',topics:['Tenses 12 types','Parts of speech','Active Passive voice','Direct Indirect Speech','Prepositions','Articles','Essay writing','Letter writing','Comprehension','Vocabulary']},
+  history:{name:'History/SST',ic:'🌍',topics:['Ancient India Indus Valley','Mughal Empire Akbar','Indian Independence 1947','Constitution of India','French Revolution','World War II','Cold War','UN formation','Indian National Congress','Fundamental Rights']},
+  computer:{name:'Computer',ic:'💻',topics:['Computer fundamentals','Hardware Software','Internet networking','Database SQL','Python programming','HTML CSS basics','MS Office','Cybersecurity basics','AI ML intro','Data structures']},
+  gk:{name:'GK 2026',ic:'🧠',topics:['India geography rivers','Indian states capitals 2026','National symbols India','Science Nobel Prize 2025','World geography','Constitution articles','Current affairs 2026','Sports achievements 2026','Indian economy 2026','G20 world politics']},
 };
-let curSub=null;
+
 function openSub(k){
-  const s=SUBS[k];if(!s)return;curSub=k;
-  document.getElementById('study-home').style.display='none';
-  document.getElementById('study-content').style.display='none';
-  document.getElementById('study-topics').style.display='block';
-  setEl('subj-title',`${s.ic} ${s.name}`);
+  const s=SUBS[k];if(!s)return;
+  curSubKey=k;
+  setStudyView('topics');
+  setEl('study-page-title',s.ic+' '+s.name);
   document.getElementById('topic-list').innerHTML=s.topics.map(t=>
     `<div class="topic-item" onclick="loadTopic('${k}','${t.replace(/'/g,"\\'")}')">
       <div class="topic-ico">📖</div>
@@ -642,99 +752,84 @@ function openSub(k){
       <span style="color:var(--sub);font-size:18px">›</span>
     </div>`).join('');
 }
-function backToSubj(){
-  document.getElementById('study-home').style.display='block';
-  document.getElementById('study-topics').style.display='none';
-  document.getElementById('study-content').style.display='none';
-}
-function backToTopics(){
-  document.getElementById('study-topics').style.display='block';
-  document.getElementById('study-content').style.display='none';
-}
-async function loadTopic(sk,topic){
-  document.getElementById('study-topics').style.display='none';
-  document.getElementById('study-content').style.display='block';
+function backToSubj(){setStudyView('home');}
+function backToTopics(){setStudyView('topics');}
+
+async function loadTopic(sk,topic,forceRefresh){
+  curSubKey=sk;curTopic=topic;
+  setStudyView('content');
   const box=document.getElementById('content-box');
   box.innerHTML='<div class="loader"><div class="spin"></div>Content la raha hoon...</div>';
-  const cKey=`topic_${sk}_${topic}_${studyLang}`;
-  let cached=getCache(cKey);
+  const cKey='topic_'+sk+'_'+topic+'_'+studyLang;
+  let cached=forceRefresh?null:getCache(cKey);
   let html='',title=topic;
   if(cached){html=cached.html;title=cached.title;}
   else{
-    try{
-      const d=await fetchContent(topic,studyLang);html=d.html;title=d.title;
-      setCache(cKey,{html,title},DAY);
-    }catch{
+    try{const d=await fetchContent(topic,studyLang);html=d.html;title=d.title;setCache(cKey,{html,title},DAY);}
+    catch{
       const li=studyLang==='en'?'in English':'Hindi mein';
-      const ai=await getAI(`${topic} ${li} explain karo. Definition, key points, examples, exam tips. Markdown.`,'study');
-      html=mdH(ai);title=topic;
-      setCache(cKey,{html,title},DAY);
+      const ai=await getAI(topic+' '+li+' explain karo. Definition, key points, examples, exam tips. Markdown.','study');
+      html=mdH(ai);title=topic;setCache(cKey,{html,title},DAY);
     }
   }
-  box.innerHTML=`<div class="content-card">
-    <h2>📖 ${title}</h2>
-    <div class="cbody">${html}</div>
-    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--brd)">
-      <div class="bold small muted mb8">🎯 Quick Quiz</div>
-      <div id="iqBox"><div class="loader" style="padding:12px"><div class="spin"></div></div></div>
-    </div>
-    <div class="flex gap8 fw mt12">
-      <button class="btn btn-p btn-sm" onclick="makeNotes('${topic.replace(/'/g,"\\'")}',this)">📝 AI Notes</button>
-      <button class="btn btn-s btn-sm" onclick="showPage('pg-ai-tutor')">🤖 AI Se Poochho</button>
-    </div>
-  </div>`;
+  box.innerHTML=
+    `<div class="content-card">
+      <h2>📖 ${escH(title)}</h2>
+      <div class="cbody">${html}</div>
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--brd)">
+        <div class="bold small muted mb8">🎯 Quick Quiz</div>
+        <div id="iqBox"><div class="loader" style="padding:10px"><div class="spin"></div></div></div>
+      </div>
+      <div class="flex gap8 fw mt12">
+        <button class="btn btn-p btn-sm" onclick="makeNotesFromTopic('${escQ(topic)}',this)">📝 AI Notes</button>
+        <button class="btn btn-s btn-sm" onclick="aitStep3('${escQ(SUBS[sk]?.name||topic)}');showPage('pg-ai-tutor')">🤖 AI Se Poochho</button>
+        <button class="btn btn-s btn-sm" onclick="loadTopic('${sk}','${escQ(topic)}',true)">🔄 Refresh</button>
+      </div>
+    </div>`;
   loadIQ(sk);
 }
+
 async function fetchContent(t,lang){
-  for(const fn of[()=>fetchWikidata(t,lang),()=>fetchDBpedia(t),()=>fetchWiki(t,lang),()=>fetchOpenLib(t)]){
+  for(const fn of [()=>fetchWiki(t,lang),()=>fetchWikidata(t,lang),()=>fetchDBpedia(t)]){
     try{const r=await fn();if(r&&r.html&&r.html.length>80)return r;}catch{}
   }
   throw new Error('all fail');
 }
 async function fetchWiki(t,lang){
-  for(const l of[lang==='en'?'en':'hi','en']){
+  const l=lang==='en'?'en':'hi';
+  for(const lng of[l,'en']){
     try{
-      const r=await fetch(`https://${l}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(t.replace(/ /g,'_'))}`,{signal:AbortSignal.timeout(8000)});
+      const r=await fetch('https://'+lng+'.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent(t.replace(/ /g,'_')),{signal:AbortSignal.timeout(8000)});
       if(r.ok){const d=await r.json();
         if(d.extract&&d.extract.length>80){
-          const h=d.extract.split('\n').filter(Boolean).map(p=>`<p>${p}</p>`).join('');
-          return{title:d.title,html:h+`<p style="margin-top:8px"><a href="${d.content_urls?.desktop?.page||'#'}" target="_blank" style="color:var(--p);font-weight:700">📖 Poora article →</a></p>`};
+          const h=d.extract.split('\n').filter(Boolean).map(p=>'<p>'+escH(p)+'</p>').join('');
+          return{title:d.title,html:h+(d.content_urls?.desktop?.page?`<p style="margin-top:8px"><a href="${d.content_urls.desktop.page}" target="_blank" style="color:var(--p);font-weight:700">📖 Read Official Site →</a></p>`:'')};
         }}
     }catch{}
-  }throw new Error('wiki fail');
+  }
+  throw new Error('wiki fail');
 }
 async function fetchWikidata(t,lang){
-  const r=await fetch(`https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(t)}&language=${lang==='en'?'en':'hi'}&format=json&limit=3&origin=*`,{signal:AbortSignal.timeout(7000)});
+  const r=await fetch('https://www.wikidata.org/w/api.php?action=wbsearchentities&search='+encodeURIComponent(t)+'&language='+(lang==='en'?'en':'hi')+'&format=json&limit=3&origin=*',{signal:AbortSignal.timeout(7000)});
   if(!r.ok)throw new Error();
   const d=await r.json();
   const items=(d.search||[]).filter(i=>i.description).slice(0,3);
   if(!items.length)throw new Error();
-  return{title:t,html:items.map(i=>`<p><strong>${i.label}</strong>: ${i.description}</p>`).join('')};
+  return{title:t,html:items.map(i=>'<p><strong>'+escH(i.label)+'</strong>: '+escH(i.description)+'</p>').join('')};
 }
 async function fetchDBpedia(t){
-  const r=await fetch(`https://lookup.dbpedia.org/api/search?query=${encodeURIComponent(t)}&format=JSON&maxResults=3`,{signal:AbortSignal.timeout(7000),headers:{Accept:'application/json'}});
+  const r=await fetch('https://lookup.dbpedia.org/api/search?query='+encodeURIComponent(t)+'&format=JSON&maxResults=3',{signal:AbortSignal.timeout(7000),headers:{Accept:'application/json'}});
   if(!r.ok)throw new Error();
   const d=await r.json();
   const lines=(d.docs||[]).slice(0,3).map(res=>{
     const lbl=Array.isArray(res.label)?res.label[0]:res.label||'';
     const desc=Array.isArray(res.comment)?res.comment[0]:res.comment||'';
-    return lbl&&desc?`<p><strong>${lbl}</strong>: ${desc.slice(0,160)}...</p>`:'';
+    return lbl&&desc?'<p><strong>'+escH(lbl)+'</strong>: '+escH(desc.slice(0,160))+'...</p>':'';
   }).filter(Boolean).join('');
   if(!lines)throw new Error();
   return{title:t,html:lines};
 }
-async function fetchOpenLib(t){
-  const r=await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(t)}&limit=3&fields=title,author_name,first_sentence`,{signal:AbortSignal.timeout(7000)});
-  if(!r.ok)throw new Error();
-  const d=await r.json();
-  const docs=(d.docs||[]).filter(x=>x.title).slice(0,3);
-  if(!docs.length)throw new Error();
-  return{title:`Books: ${t}`,html:docs.map(doc=>{
-    const auth=(doc.author_name||[]).slice(0,2).join(', ');
-    const sent=typeof doc.first_sentence==='object'?doc.first_sentence.value:doc.first_sentence||'';
-    return`<p>📚 <strong>${doc.title}</strong>${auth?' — '+auth:''}<br><em>${sent?sent.slice(0,100)+'...':''}</em></p>`;
-  }).join('')};
-}
+
 async function loadIQ(sk){
   const cm={math:19,science:17,physics:17,chemistry:17,bio:17,history:23,computer:18,english:10,gk:9};
   try{
@@ -743,36 +838,34 @@ async function loadIQ(sk){
     el.innerHTML=qs.map((q,qi)=>{
       const opts=shuf([...q.incorrect_answers,q.correct_answer]);
       const ci=opts.indexOf(q.correct_answer);
-      return`<p class="bold small" style="margin:10px 0 6px;color:var(--txt)">${qi+1}. ${dH(q.question)}</p>
-        ${opts.map((o,oi)=>`<div class="qopt" id="iq_${qi}_${oi}" onclick="ansIQ(${qi},${oi},${ci})">${dH(o)}</div>`).join('')}`;
+      return'<p class="bold small" style="margin:10px 0 6px;color:var(--txt)">'+(qi+1)+'. '+dH(q.question)+'</p>'+
+        opts.map((o,oi)=>'<div class="qopt" id="iq_'+qi+'_'+oi+'" onclick="ansIQ('+qi+','+oi+','+ci+')">'+dH(o)+'</div>').join('');
     }).join('');
   }catch{}
 }
 function ansIQ(qi,c,ok){
-  document.querySelectorAll(`[id^="iq_${qi}_"]`).forEach((e,i)=>{
+  document.querySelectorAll('[id^="iq_'+qi+'_"]').forEach((e,i)=>{
     e.classList.add('done');if(i===ok)e.classList.add('ok');else if(i===c&&c!==ok)e.classList.add('no');
   });
 }
-async function makeNotes(topic,btn){
+async function makeNotesFromTopic(topic,btn){
   btn.textContent='⏳...';btn.disabled=true;
   const li=studyLang==='en'?'in English':'Hindi mein';
-  const n=await getAI(`${topic} ke complete study notes ${li}. Definition, Key Points, Formulas/Dates, Examples, Exam Tips. Markdown.`,'study');
-  const cbox=document.querySelector('.content-card');
-  if(cbox)cbox.innerHTML+=`<div style="margin-top:14px;padding:14px;background:var(--card2);border-radius:12px;border:1px solid var(--brd)">
-    <div class="bold small mb8" style="color:var(--p)">📝 AI Notes — ${topic}</div>
-    <div class="cbody">${mdH(n)}</div>
-    <button class="btn btn-s btn-sm mt8" onclick="saveNoteLocal('${topic.replace(/'/g,"\\'")}',this)">💾 Save Note</button>
-  </div>`;
-}
-function saveNoteLocal(title,btn){
-  const content=btn.previousElementSibling?.innerText||'';
-  const notes=JSON.parse(localStorage.getItem('myNotes')||'[]');
-  notes.unshift({id:Date.now(),title,content,ts:new Date().toLocaleDateString()});
-  localStorage.setItem('myNotes',JSON.stringify(notes.slice(0,50)));
-  btn.textContent='✅ Saved!';btn.disabled=true;
+  const n=await getAI(topic+' ke complete study notes '+li+'. Definition, Key Points, Formulas/Dates, Examples, Exam Tips. Markdown.','study');
+  const box=document.querySelector('.content-card');
+  if(box){
+    const div=document.createElement('div');
+    div.style.cssText='margin-top:14px;padding:14px;background:var(--card2);border-radius:12px;border:1px solid var(--brd)';
+    div.innerHTML='<div class="bold small mb8" style="color:var(--p)">📝 AI Notes — '+escH(topic)+'</div><div class="cbody">'+mdH(n)+'</div>'+
+      '<div class="flex gap8 mt8"><button class="btn btn-p btn-sm" onclick="saveNoteLocal(\''+escQ(topic)+'\',this.parentElement.previousElementSibling.innerText)">💾 Save Note</button>'+
+      '<button class="btn btn-s btn-sm" onclick="downloadTxt(\''+escQ(topic)+'\',this.parentElement.previousElementSibling.innerText)">⬇️ Download</button></div>';
+    box.appendChild(div);
+    div.scrollIntoView({behavior:'smooth'});
+  }
+  btn.textContent='✅ Done';
 }
 
-// ── SEARCH ────────────────────────────────────────────────────────────────────
+// ══ SEARCH ══
 function doSearch(v){
   v=v.toLowerCase().trim();
   const r=document.getElementById('srchRes');if(!r)return;
@@ -782,15 +875,15 @@ function doSearch(v){
     if(t.toLowerCase().includes(v)||sv.name.toLowerCase().includes(v))results.push({sk,t,sn:sv.name,ic:sv.ic});
   }));
   if(!results.length){r.innerHTML='<div class="empty"><div class="ei">🔍</div><p class="muted">Koi result nahi mila</p></div>';return;}
-  r.innerHTML=results.slice(0,10).map(x=>
-    `<div class="topic-item" onclick="showPage('pg-study');setTimeout(()=>loadTopic('${x.sk}','${x.t.replace(/'/g,"\\'")}'),150)">
+  r.innerHTML=results.slice(0,12).map(x=>
+    `<div class="topic-item" onclick="showPage('pg-study');setTimeout(()=>loadTopic('${x.sk}','${escQ(x.t)}'),100)">
       <div class="topic-ico">${x.ic}</div>
-      <div style="flex:1"><div class="topic-title">${x.t}</div><div class="topic-sub">${x.sn}</div></div>
+      <div style="flex:1"><div class="topic-title">${escH(x.t)}</div><div class="topic-sub">${x.sn}</div></div>
       <span style="color:var(--sub)">›</span>
     </div>`).join('');
 }
 
-// ── QUIZ ──────────────────────────────────────────────────────────────────────
+// ══ QUIZ ══
 let qzS={qs:[],cur:0,score:0,sub:'',cat:0,daily:0,streak:0};
 const QL=['A','B','C','D'];
 async function startQuiz(sub,cat){
@@ -805,7 +898,7 @@ async function startQuiz(sub,cat){
   }
 }
 async function fetchTrivia(cat,n){
-  const r=await fetch(`https://opentdb.com/api.php?amount=${n}&category=${cat}&type=multiple`,{signal:AbortSignal.timeout(10000)});
+  const r=await fetch('https://opentdb.com/api.php?amount='+n+'&category='+cat+'&type=multiple',{signal:AbortSignal.timeout(10000)});
   if(!r.ok)throw new Error();const d=await r.json();if(!d.results?.length)throw new Error();return d.results;
 }
 function renderQuiz(){
@@ -816,23 +909,22 @@ function renderQuiz(){
     setEl('qzToday',qzS.daily);setEl('qzAcc',pct+'%');setEl('qzStrk',qzS.streak+'🔥');
     const p=parseInt(localStorage.getItem('uPts')||'50')+Math.round(score*5);
     localStorage.setItem('uPts',p);loadStats();
-    document.getElementById('quiz-content').innerHTML=`<div class="center" style="padding:20px">
-      <div style="font-size:48px;margin-bottom:12px">${pct>=80?'🏆':pct>=60?'⭐':'💪'}</div>
-      <div class="score-circle"><div class="score-n">${score}/${qs.length}</div><div class="score-l">${pct}%</div></div>
-      <p class="muted small mt8">${pct>=80?'Zabardast!':pct>=60?'Bahut achha!':'Aur practice karo!'}</p>
-      <div class="flex gap8 fw" style="justify-content:center;margin-top:16px">
-        <button class="btn btn-p btn-sm" onclick="startQuiz('${qzS.sub}',${qzS.cat})">🔄 Dobara</button>
-        <button class="btn btn-s btn-sm" onclick="resetQuiz()">🏠 Home</button>
-      </div></div>`;return;
+    document.getElementById('quiz-content').innerHTML=
+      '<div class="center" style="padding:20px">'+
+      '<div style="font-size:48px;margin-bottom:12px">'+(pct>=80?'🏆':pct>=60?'⭐':'💪')+'</div>'+
+      '<div class="score-circle"><div class="score-n">'+score+'/'+qs.length+'</div><div class="score-l">'+pct+'%</div></div>'+
+      '<p class="muted small mt8">'+(pct>=80?'Zabardast!':pct>=60?'Bahut achha!':'Aur practice karo!')+'</p>'+
+      '<div class="flex gap8 fw" style="justify-content:center;margin-top:14px">'+
+      '<button class="btn btn-p btn-sm" onclick="startQuiz(\''+qzS.sub+'\','+qzS.cat+')">🔄 Dobara</button>'+
+      '<button class="btn btn-s btn-sm" onclick="resetQuiz()">🏠 Home</button></div></div>';return;
   }
   const q=qs[cur];const opts=shuf([...q.incorrect_answers,q.correct_answer]);
   const ci=opts.indexOf(q.correct_answer);const pct=Math.round(cur/qs.length*100);
-  document.getElementById('quiz-content').innerHTML=`<div class="quiz-card">
-    <div class="qprog"><div class="qprog-bar" style="width:${pct}%"></div></div>
-    <div class="qmeta">Q ${cur+1}/${qs.length} • Score: ${score}</div>
-    <div class="qtext">${dH(q.question)}</div>
-    ${opts.map((o,i)=>`<div class="qopt" id="qo_${i}" onclick="pickQ(${i},${ci})"><div class="qltr">${QL[i]}</div>${dH(o)}</div>`).join('')}
-  </div>`;
+  document.getElementById('quiz-content').innerHTML=
+    '<div class="quiz-card"><div class="qprog"><div class="qprog-bar" style="width:'+pct+'%"></div></div>'+
+    '<div class="qmeta">Q '+(cur+1)+'/'+qs.length+' • Score: '+score+'</div>'+
+    '<div class="qtext">'+dH(q.question)+'</div>'+
+    opts.map((o,i)=>'<div class="qopt" id="qo_'+i+'" onclick="pickQ('+i+','+ci+')"><div class="qltr">'+QL[i]+'</div>'+dH(o)+'</div>').join('')+'</div>';
 }
 function pickQ(c,ok){
   document.querySelectorAll('[id^="qo_"]').forEach((e,i)=>{e.classList.add('done');if(i===ok)e.classList.add('ok');else if(i===c&&c!==ok)e.classList.add('no');});
@@ -840,33 +932,35 @@ function pickQ(c,ok){
 }
 function resetQuiz(){document.getElementById('quiz-home').style.display='';document.getElementById('quiz-play').style.display='none';}
 
-// ── FLASHCARDS ────────────────────────────────────────────────────────────────
+// ══ FLASHCARDS ══
 const FC_T={
-  physics:["Newton laws of motion","Ohm's law electricity","Archimedes principle","Boyle law gases","Faraday electromagnetic"],
-  chem:["Periodic table","Atomic structure","Chemical bonding","Acids and bases","Carbon compounds"],
-  bio:["Photosynthesis","Cell membrane","DNA structure","Natural selection","Mitosis"],
-  history:["Indian independence 1947","Mughal Empire","World War II","French Revolution","Cold War"],
-  math:["Quadratic formula","Pythagoras theorem","Trigonometry","Arithmetic Progression","Probability"],
-  gk:["India geography 2026","National symbols India","Indian constitution","Science Nobel 2025","Current affairs 2026"],
+  physics:['Newton laws of motion','Ohms law electricity','Archimedes principle','Boyle law gases','Faraday electromagnetic induction'],
+  chem:['Periodic table trends','Atomic structure','Chemical bonding','Acids and bases','Carbon compounds organic'],
+  bio:['Photosynthesis process','Cell membrane structure','DNA replication','Natural selection Darwin','Mitosis meiosis'],
+  history:['Indian independence 1947','Mughal Empire history','World War II timeline','French Revolution','Cold War 1947'],
+  math:['Quadratic formula derivation','Pythagoras theorem','Trigonometry identities','Arithmetic Progression','Probability basics'],
+  gk:['India geography 2026','National symbols India','Indian constitution articles','Science Nobel 2025','Current affairs India 2026'],
 };
 let fcCards=[],fcIdx=0,fcFlip=false;
 async function loadFC(cat,tagEl){
-  document.querySelectorAll('#fcTags .tag').forEach(t=>t.className='tag');if(tagEl)tagEl.className='tag on';
+  document.querySelectorAll('#fcTags .tag').forEach(t=>t.className='tag');
+  if(tagEl)tagEl.className='tag on';
   fcCards=[];fcIdx=0;fcFlip=false;
   document.getElementById('fc-cont').innerHTML='<div class="loader"><div class="spin"></div>Cards ban rahe hain...</div>';
   document.getElementById('fc-nav').innerHTML='';
   for(const t of(FC_T[cat]||FC_T.physics).slice(0,5)){
-    const ck=`fc_${t}_${studyLang}`;let cached=getCache(ck);
+    const ck='fc_'+t+'_'+fcLang;
+    let cached=getCache(ck);
     if(cached){fcCards.push(cached);continue;}
     try{
-      const d=await fetchContent(t,studyLang);
-      const item={q:t,a:d.html.replace(/<[^>]+>/g,'').slice(0,200)+'...'};
+      const d=await fetchContent(t,fcLang);
+      const item={q:t,a:d.html.replace(/<[^>]+>/g,'').slice(0,250)+'...'};
       fcCards.push(item);setCache(ck,item,DAY);
     }catch{
       try{
-        const li=studyLang==='en'?'in English':'Hindi mein';
-        const a=await getAI(`${t} kya hai? 2-3 simple lines ${li}.`,'study');
-        const item={q:t,a:a.slice(0,200)};fcCards.push(item);setCache(ck,item,DAY);
+        const li=fcLang==='en'?'in English':'Hindi mein';
+        const a=await getAI(t+' kya hai? 2-3 simple lines '+li+'.','study');
+        const item={q:t,a:a.slice(0,250)};fcCards.push(item);setCache(ck,item,DAY);
       }catch{}
     }
   }
@@ -875,52 +969,109 @@ async function loadFC(cat,tagEl){
 }
 function renderFC(){
   fcFlip=false;const c=fcCards[fcIdx];
-  const dots=fcCards.map((_,i)=>`<div class="fc-dot${i===fcIdx?' on':''}"></div>`).join('');
-  document.getElementById('fc-cont').innerHTML=`<div class="fc-dots">${dots}</div>
-    <div class="fc-card" id="fcEl" onclick="flipFC()"><div class="fc-q">${c.q}</div><div class="fc-hint">👆 Tap karke answer dekho</div></div>
-    <div class="center small muted">${fcIdx+1} / ${fcCards.length}</div>`;
-  document.getElementById('fc-nav').innerHTML=`<button class="btn btn-s btn-sm" onclick="fcP()" ${fcIdx===0?'disabled':''}>← Prev</button><button class="btn btn-p btn-sm" onclick="fcN()" ${fcIdx===fcCards.length-1?'disabled':''}>Next →</button>`;
+  const dots=fcCards.map((_,i)=>'<div class="fc-dot'+(i===fcIdx?' on':'')+'"></div>').join('');
+  document.getElementById('fc-cont').innerHTML=
+    '<div class="fc-dots">'+dots+'</div>'+
+    '<div class="fc-card" id="fcEl" onclick="flipFC()"><div class="fc-q">'+escH(c.q)+'</div><div class="fc-hint">👆 Tap karke answer dekho</div></div>'+
+    '<div class="center small muted">'+(fcIdx+1)+' / '+fcCards.length+'</div>';
+  document.getElementById('fc-nav').innerHTML=
+    '<button class="btn btn-s btn-sm" onclick="fcP()"'+(fcIdx===0?' disabled':'')+'>← Prev</button>'+
+    '<button class="btn btn-p btn-sm" onclick="fcN()"'+(fcIdx===fcCards.length-1?' disabled':'')+'>Next →</button>';
 }
-function flipFC(){const e=document.getElementById('fcEl');if(!e)return;
-  if(!fcFlip){e.classList.add('flipped');e.innerHTML=`<div class="fc-a">${fcCards[fcIdx].a}</div>`;fcFlip=true;}
-  else{e.classList.remove('flipped');e.innerHTML=`<div class="fc-q">${fcCards[fcIdx].q}</div><div class="fc-hint">👆 Tap — answer</div>`;fcFlip=false;}}
+function flipFC(){
+  const e=document.getElementById('fcEl');if(!e)return;
+  if(!fcFlip){e.classList.add('flipped');e.innerHTML='<div class="fc-a">'+escH(fcCards[fcIdx].a)+'</div>';fcFlip=true;}
+  else{e.classList.remove('flipped');e.innerHTML='<div class="fc-q">'+escH(fcCards[fcIdx].q)+'</div><div class="fc-hint">👆 Tap — answer</div>';fcFlip=false;}
+}
 function fcN(){if(fcIdx<fcCards.length-1){fcIdx++;renderFC();}}
 function fcP(){if(fcIdx>0){fcIdx--;renderFC();}}
 
-// ── UPDATES ───────────────────────────────────────────────────────────────────
-const UQ={all:"India March 2026 latest sarkari updates naukri form result yojana. Real 2026.",jobs:"India govt jobs recruitment March 2026 vacancies.",forms:"India online govt form apply March 2026 last dates.",results:"India board exam results March 2026 CBSE UP Bihar.",yojana:"India PM Modi yojana March 2026 benefits apply.",admit:"India admit card March 2026 download.",scholar:"India scholarship 2026 students apply."};
+// ══ UPDATES ══
+const UQ={
+  all:'India March 2026 latest sarkari updates naukri form result yojana. 8 items Hindi bullets. Bold title, detail, official website.',
+  jobs:'India govt jobs recruitment March 2026. 8 vacancies. Post, dept, last date, official site.',
+  forms:'India online govt forms apply March 2026. 8 active forms. Last date, apply link.',
+  results:'India board results March 2026 CBSE UP Bihar. 8 items.',
+  yojana:'India PM Modi yojana March 2026. 8 schemes. Benefit, apply kaise, official site.',
+  admit:'India admit cards March 2026. 8 upcoming. Exam name, date, official download site.',
+  scholar:'India scholarships 2026. 8 active. Amount, apply date, official site.',
+};
+let curUpdCat='all';
 async function loadUpd(type,tagEl){
-  document.querySelectorAll('#pg-updates .tag').forEach(t=>t.className='tag');if(tagEl)tagEl.className='tag on';
+  curUpdCat=type;
+  document.querySelectorAll('#pg-updates .tag').forEach(t=>t.className='tag');
+  if(tagEl)tagEl.className='tag on';
   const c=document.getElementById('upd-cont');
   c.innerHTML='<div class="loader"><div class="spin"></div>Live data la raha hoon...</div>';
-  const ck=`upd_${type}`;let cached=getCache(ck);
+  const ck='upd_'+type+'_'+updLang;
+  let cached=getCache(ck);
   let txt=cached;
-  if(!txt){txt=await getAINews(UQ[type]||UQ.all,'sarkari');setCache(ck,txt,DAY);}
-  c.innerHTML=`<div class="content-card"><div class="cbody">${mdH(txt)}</div>
-    <button class="btn btn-s btn-sm mt8" onclick="clearCache('upd_${type}');loadUpd('${type}',null)">🔄 Refresh (Naya Data)</button>
-  </div>`;
+  if(!txt){
+    const q=updLang==='en'?UQ[type].replace('Hindi bullets','English bullets'):UQ[type];
+    txt=await getAI(q,'news');
+    setCache(ck,txt,DAY);
+  }
+  renderUpdates(txt);
+}
+function renderUpdates(txt){
+  const lines=txt.split('\n').filter(l=>l.trim());
+  const cards=lines.map(line=>{
+    const clean=line.replace(/^\*+/,'').replace(/\*+$/,'').replace(/^[•\-\d\.]+\s*/,'').trim();
+    if(!clean||clean.length<10)return'';
+    // Extract link if present
+    const linkMatch=clean.match(/https?:\/\/[^\s\)]+/);
+    const link=linkMatch?linkMatch[0]:'';
+    const text=clean.replace(/https?:\/\/[^\s\)]+/g,'').replace(/\[.*?\]/g,'').trim();
+    if(!text)return'';
+    return`<div class="news-card">
+      <div class="nc-title">${escH(text.slice(0,120))}</div>
+      ${link?`<a href="${link}" target="_blank" class="nc-link">🔗 Read Official Site →</a>`:''}
+    </div>`;
+  }).filter(Boolean).join('');
+  const c=document.getElementById('upd-cont');
+  c.innerHTML=(cards||'<div class="muted small center" style="padding:20px">Koi update nahi mili.</div>')+
+    `<button class="btn btn-s btn-sm mt8" onclick="refreshUpd()">🔄 Refresh (Naya Data)</button>`;
+}
+async function refreshUpd(){
+  clearCachePrefix('upd_');
+  const tag=document.querySelector('#pg-updates .tag.on');
+  loadUpd(curUpdCat||'all',tag);
 }
 
-// ── NEWS ──────────────────────────────────────────────────────────────────────
-const NQ={india:"India latest breaking news today March 2026.",pol:"India politics BJP Congress March 2026.",sport:"India cricket IPL 2026 sports.",biz:"India economy business March 2026.",edu:"India education CBSE JEE NEET 2026."};
+// ══ NEWS ══
+const NQ={
+  india:'India latest breaking news today March 2026. 8 items. Bold headline, 1-line summary.',
+  pol:'India politics BJP Congress March 2026. 8 items. Bold headline, summary.',
+  sport:'India cricket IPL 2026 sports. 8 items. Bold headline, result/summary.',
+  biz:'India economy business March 2026. 8 items. Bold headline, summary.',
+  edu:'India education CBSE JEE NEET 2026. 8 items. Bold headline, summary.',
+};
+let curNewsCat='india';
 async function loadNews(type,tagEl){
-  document.querySelectorAll('#pg-news .tag').forEach(t=>t.className='tag');if(tagEl)tagEl.className='tag on';
+  curNewsCat=type;
+  document.querySelectorAll('#pg-news .tag').forEach(t=>t.className='tag');
+  if(tagEl)tagEl.className='tag on';
   const c=document.getElementById('news-cont');
   c.innerHTML='<div class="loader"><div class="spin"></div>Taaza khabar la raha hoon...</div>';
-  const ck=`news_${type}`;let cached=getCache(ck);
-  let html=cached;
-  if(!html){
-    if(['india','sport'].includes(type)){
-      const rss={india:'https://feeds.feedburner.com/ndtvnews-top-stories',sport:'https://feeds.feedburner.com/ndtvsports-latest'};
+  const ck='news_'+type+'_'+newsLang;
+  let cached=getCache(ck);
+  let txt=cached;
+  if(!txt){
+    // Try RSS first
+    if(type==='india'||type==='sport'){
+      const urls={india:'https://feeds.feedburner.com/ndtvnews-top-stories',sport:'https://feeds.feedburner.com/ndtvsports-latest'};
       try{
-        const r=await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rss[type])}`,{signal:AbortSignal.timeout(7000)});
-        if(r.ok){const d=await r.json();html=parseRSS(d.contents);}
+        const r=await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(urls[type]),{signal:AbortSignal.timeout(8000)});
+        if(r.ok){const d=await r.json();const rss=parseRSS(d.contents);if(rss&&rss.length>50){txt=rss;}}
       }catch{}
     }
-    if(!html){const txt=await getAINews(NQ[type]||NQ.india,'news');html=`<div class="content-card"><div class="cbody">${mdH(txt)}</div></div>`;}
-    setCache(ck,html,6*HOUR);
+    if(!txt){
+      const q=newsLang==='en'?NQ[type].replace('Hindi','English'):NQ[type];
+      txt=await getAI(q,'news');
+    }
+    setCache(ck,txt,6*HOUR);
   }
-  c.innerHTML=html+`<button class="btn btn-s btn-sm mt8" onclick="clearCache('news_${type}');loadNews('${type}',null)">🔄 Refresh</button>`;
+  renderNews(txt);
 }
 function parseRSS(xml){
   try{
@@ -928,199 +1079,352 @@ function parseRSS(xml){
     if(!items.length)return'';
     return items.map(m=>{
       const t=(m[1].match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/)||[])[1]?.trim()||'';
-      const l=(m[1].match(/<link>(.*?)<\/link>/)||[])[1]?.trim()||'';
+      const l=(m[1].match(/<link>(.*?)<\/link>/)||[])[1]?.trim()||'#';
       const p=(m[1].match(/<pubDate>(.*?)<\/pubDate>/)||[])[1]?.trim().slice(0,16)||'';
-      const desc=(m[1].match(/<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/)||[])[1]?.replace(/<[^>]+>/g,'').trim().slice(0,100)||'';
       if(!t)return'';
-      return`<div class="news-card" onclick="newsReadMore('${t.replace(/'/g,"\\'")}','${l}')">
-        <div class="nc-title">${t.slice(0,85)}</div>
-        <div class="nc-meta">📅 ${p}</div>
-        ${desc?`<div class="small muted mb8">${desc}...</div>`:''}
-        <span class="nc-btn">🤖 AI se detail padhein →</span>
-      </div>`;
-    }).join('');
+      return t+'|'+l+'|'+p;
+    }).filter(Boolean).join('\n');
   }catch{return'';}
 }
-async function newsReadMore(title,link){
+function renderNews(txt){
+  const c=document.getElementById('news-cont');
+  // RSS format: title|link|date
+  if(txt.includes('|')){
+    const cards=txt.split('\n').filter(l=>l.includes('|')).map(line=>{
+      const[title,link,date]=line.split('|');
+      if(!title)return'';
+      return`<div class="news-card" onclick="newsDetail('${escQ(title)}','${escQ(link)}')">
+        <div class="nc-title">${escH(title.slice(0,90))}</div>
+        <div class="nc-meta">📅 ${escH(date||'')}</div>
+        <span class="nc-link">🤖 AI se detail jaano →</span>
+      </div>`;
+    }).filter(Boolean).join('');
+    c.innerHTML=(cards||'<div class="muted small center" style="padding:20px">News nahi mili.</div>')+
+      `<button class="btn btn-s btn-sm mt8" onclick="refreshNews()">🔄 Refresh</button>`;
+  } else {
+    // AI text format
+    const lines=txt.split('\n').filter(l=>l.trim());
+    const cards=lines.map(line=>{
+      const clean=line.replace(/^\*+/,'').replace(/\*+$/,'').replace(/^[•\-\d\.]+\s*/,'').trim();
+      if(!clean||clean.length<10)return'';
+      return`<div class="news-card" onclick="newsDetail('${escQ(clean.slice(0,80))}','')">
+        <div class="nc-title">${escH(clean.slice(0,100))}</div>
+        <span class="nc-link">🤖 AI se aur jaano →</span>
+      </div>`;
+    }).filter(Boolean).join('');
+    c.innerHTML=(cards||'<div class="muted small center" style="padding:20px">News nahi mili.</div>')+
+      `<button class="btn btn-s btn-sm mt8" onclick="refreshNews()">🔄 Refresh</button>`;
+  }
+}
+async function newsDetail(title,link){
   const c=document.getElementById('news-cont');
   const old=c.innerHTML;
-  c.innerHTML='<div class="loader"><div class="spin"></div>AI jawab de raha hai...</div>';
-  const ck=`news_detail_${title.slice(0,30)}`;
+  c.innerHTML='<div class="loader"><div class="spin"></div>AI detail de raha hai...</div>';
+  const ck='ndetail_'+title.slice(0,30);
   let ai=getCache(ck);
   if(!ai){
-    ai=await getAI(`News: "${title}"\n\nIs khabar ke baare mein detail mein batao. Background, importance, India pr impact. ${studyLang==='en'?'In English.':'Hindi mein.'}`,'news');
+    const li=newsLang==='en'?'in English.':'Hindi mein.';
+    ai=await getAI('News: "'+title+'"\n\nIs khabar ke baare mein detail '+li+' Background, importance, India pr impact. Markdown.','news');
     setCache(ck,ai,DAY);
   }
-  c.innerHTML=`<div class="content-card">
-    <h2>📰 ${title.slice(0,60)}</h2>
-    <div class="cbody">${mdH(ai)}</div>
-    ${link?`<p class="mt8"><a href="${link}" target="_blank" style="color:var(--p);font-weight:700">🔗 Original article →</a></p>`:''}
-    <button class="btn btn-s btn-sm mt8" onclick="this.closest('.page').querySelector('#news-cont').innerHTML='${old.replace(/'/g,"\\'")}';window.scrollTo(0,0)">← News Wapas</button>
-  </div>`;
+  c.innerHTML=
+    `<div class="content-card">
+      <h2>📰 ${escH(title.slice(0,70))}</h2>
+      <div class="cbody">${mdH(ai)}</div>
+      ${link&&link!='#'?`<p class="mt8"><a href="${link}" target="_blank" class="nc-link">🔗 Read Official Site →</a></p>`:''}
+    </div>`+
+    `<button class="btn btn-s btn-sm mt8" onclick="document.getElementById('news-cont').innerHTML=\`${old.replace(/`/g,"'")}\`">← News Wapas</button>`;
+}
+async function refreshNews(){
+  clearCachePrefix('news_');
+  const tag=document.querySelector('#pg-news .tag.on');
+  loadNews(curNewsCat||'india',tag);
 }
 
-// ── TOOLS ─────────────────────────────────────────────────────────────────────
+// ══ TOOLS ══
 let pI=null,pS=25*60,pM='work';
 function showTool(t){
   const c=document.getElementById('tool-content');
+  c.scrollIntoView({behavior:'smooth'});
   if(t==='pomo'){
-    c.innerHTML=`<div class="tool-card"><div class="tool-title">⏱️ Pomodoro Timer</div>
-      <div class="pomo-wrap">
-        <div class="pomo-ring">
-          <svg width="175" height="175" viewBox="0 0 175 175">
-            <defs><linearGradient id="pg" x1="0%" y1="0%" x2="100%"><stop offset="0%" style="stop-color:#7c3aed"/><stop offset="100%" style="stop-color:#a855f7"/></linearGradient></defs>
-            <circle class="pomo-c pomo-bg" cx="87.5" cy="87.5" r="75" stroke-dasharray="471"/>
-            <circle class="pomo-c pomo-fg" id="pArc" cx="87.5" cy="87.5" r="75" stroke-dasharray="471" stroke-dashoffset="0"/>
-          </svg>
-          <div class="pomo-ctr"><div class="pomo-t" id="pDisp">25:00</div><div class="pomo-l" id="pMode">Study Time 📚</div></div>
-        </div>
-        <div class="flex gap8" style="justify-content:center;flex-wrap:wrap">
-          <button class="btn btn-p btn-sm" onclick="pStart()">▶ Start</button>
-          <button class="btn btn-s btn-sm" onclick="pPause()">⏸ Pause</button>
-          <button class="btn btn-s btn-sm" onclick="pReset()">🔄 Reset</button>
-        </div>
-        <p class="small muted center mt8">25 min study → 5 min break 🎯</p>
-      </div></div>`;
+    c.innerHTML=
+      `<div class="tool-card"><div class="tool-title">⏱️ Pomodoro Timer</div>
+        <div class="pomo-wrap">
+          <div class="pomo-ring">
+            <svg width="170" height="170" viewBox="0 0 170 170">
+              <defs><linearGradient id="pg" x1="0%" y1="0%" x2="100%"><stop offset="0%" style="stop-color:#7c3aed"/><stop offset="100%" style="stop-color:#a855f7"/></linearGradient></defs>
+              <circle class="pomo-c pomo-bg" cx="85" cy="85" r="72" stroke-dasharray="452"/>
+              <circle class="pomo-c pomo-fg" id="pArc" cx="85" cy="85" r="72" stroke-dasharray="452" stroke-dashoffset="0"/>
+            </svg>
+            <div class="pomo-ctr"><div class="pomo-t" id="pDisp">25:00</div><div class="pomo-l" id="pMode">Study Time 📚</div></div>
+          </div>
+          <div class="flex gap8" style="justify-content:center;flex-wrap:wrap">
+            <button class="btn btn-p btn-sm" onclick="pStart()">▶ Start</button>
+            <button class="btn btn-s btn-sm" onclick="pPause()">⏸ Pause</button>
+            <button class="btn btn-s btn-sm" onclick="pReset()">🔄 Reset</button>
+          </div>
+          <p class="small muted center mt8">25 min study → 5 min break 🎯</p>
+        </div></div>`;
   }else if(t==='cd'){
-    c.innerHTML=`<div class="tool-card"><div class="tool-title">📅 Exam Countdown</div>
-      <input class="inp" id="eName" placeholder="Exam naam (e.g. Board Exam 2026)">
-      <input type="date" class="inp" id="eDate">
-      <button class="btn btn-p btn-full" onclick="calcCD()">📊 Calculate Karo</button>
-      <div id="cdR" class="mt8"></div></div>`;
+    c.innerHTML=
+      `<div class="tool-card"><div class="tool-title">📅 Exam Countdown</div>
+        <input class="inp" id="eName" placeholder="Exam naam (e.g. Board Exam 2026)">
+        <input type="date" class="inp" id="eDate">
+        <button class="btn btn-p btn-full" onclick="calcCD()">📊 Calculate Karo</button>
+        <div id="cdR" class="mt8"></div></div>`;
   }else if(t==='formula'){
-    c.innerHTML=`<div class="tool-card"><div class="tool-title">📐 Formula Sheet</div><div class="cbody">
-      <h3>➕ Mathematics</h3><div class="ex-box">x=(-b±√b²-4ac)/2a | A=πr² | a²+b²=c²<br>CI=P(1+r/100)ⁿ | SI=PRT/100 | AP: n/2(2a+(n-1)d)</div>
-      <h3>⚛️ Physics</h3><div class="ex-box">v=u+at | s=ut+½at² | v²=u²+2as<br>F=ma | W=Fd | P=W/t | KE=½mv² | PE=mgh | V=IR</div>
-      <h3>🧪 Chemistry</h3><div class="ex-box">PV=nRT | pH=-log[H⁺] | n=m/M | ρ=m/V</div>
-      <h3>📊 Statistics</h3><div class="ex-box">Mean=Σx/n | P(E)=n(E)/n(S) | SD=√(Σ(x-μ)²/n)</div>
-    </div></div>`;
+    c.innerHTML=
+      `<div class="tool-card"><div class="tool-title">📐 Formula Sheet</div><div class="cbody">
+        <h3>➕ Mathematics</h3><div class="ex-box">x=(-b±√b²-4ac)/2a | A=πr² | a²+b²=c²<br>CI=P(1+r/100)ⁿ | SI=PRT/100<br>AP: Sn=n/2(2a+(n-1)d)</div>
+        <h3>⚛️ Physics</h3><div class="ex-box">v=u+at | s=ut+½at² | v²=u²+2as<br>F=ma | W=Fd | P=W/t | V=IR<br>KE=½mv² | PE=mgh | E=mc²</div>
+        <h3>🧪 Chemistry</h3><div class="ex-box">PV=nRT | pH=-log[H⁺]<br>n=m/M | ρ=m/V | ΔG=ΔH-TΔS</div>
+        <h3>📊 Statistics</h3><div class="ex-box">Mean=Σx/n | P(E)=n(E)/n(S)<br>SD=√(Σ(x-μ)²/n)</div>
+      </div></div>`;
   }else if(t==='notes-ai'){
-    c.innerHTML=`<div class="tool-card"><div class="tool-title">📝 AI Notes Maker</div>
-      <input class="inp" id="nTopic" placeholder="Topic (e.g. Photosynthesis, Algebra)">
-      <div class="flex gap8 mb8">
-        <button class="btn btn-p btn-sm" onclick="makeNote('hi')">🇮🇳 Hindi</button>
-        <button class="btn btn-s btn-sm" onclick="makeNote('en')">🇬🇧 English</button>
-      </div><div id="nRes"></div></div>`;
-  }else if(t==='links'){
-    c.innerHTML=`<div class="tool-card"><div class="tool-title">🔗 Free Resources</div><div class="cbody">
-      <h3>📚 NCERT Books</h3><p><a href="https://ncert.nic.in" target="_blank" class="btn btn-p btn-sm">ncert.nic.in →</a></p>
-      <h3>🎓 Khan Academy Hindi</h3><p><a href="https://hi.khanacademy.org" target="_blank" class="btn btn-p btn-sm">hi.khanacademy.org →</a></p>
-      <h3>💼 Sarkari Sites</h3>
-      <p><a href="https://sarkariresult.com" target="_blank" class="btn btn-s btn-sm">sarkariresult.com</a>
-         <a href="https://rojgarresult.com" target="_blank" class="btn btn-s btn-sm" style="margin-left:6px">rojgarresult.com</a></p>
-      <h3>📰 Hindi News</h3>
-      <p><a href="https://ndtv.in" target="_blank" class="btn btn-s btn-sm">ndtv.in</a>
-         <a href="https://aajtak.in" target="_blank" class="btn btn-s btn-sm" style="margin-left:6px">aajtak.in</a></p>
-    </div></div>`;
+    c.innerHTML=
+      `<div class="tool-card"><div class="tool-title">📝 AI Notes Maker</div>
+        <input class="inp" id="nTopic" placeholder="Topic (e.g. Photosynthesis, Algebra, Mughal Empire)">
+        <div class="flex gap8 mb8">
+          <button class="btn btn-p btn-sm" onclick="makeNote('hi')">🇮🇳 Hindi Notes</button>
+          <button class="btn btn-s btn-sm" onclick="makeNote('en')">🇬🇧 English Notes</button>
+        </div>
+        <div id="nRes"></div></div>`;
   }else if(t==='resume'){
-    c.innerHTML=`<div class="tool-card"><div class="tool-title">📄 AI Resume Builder</div>
-      <p class="small muted mb8">Apni details daalo — AI professional resume banayega!</p>
-      <textarea class="inp" id="resumeData" rows="6" placeholder="Naam: Rahul Kumar&#10;Phone: 9876543210&#10;Email: rahul@gmail.com&#10;Education: B.Sc Computer, Delhi Univ 2023&#10;Skills: Python, MS Office, English&#10;Experience: Data entry 1 year" style="resize:vertical"></textarea>
-      <div class="flex gap8 mb8">
-        <button class="btn btn-p btn-sm" onclick="buildResume('en')">🇬🇧 English Resume</button>
-        <button class="btn btn-s btn-sm" onclick="buildResume('hi')">🇮🇳 Hindi Resume</button>
-      </div><div id="resumeRes"></div></div>`;
+    c.innerHTML=
+      `<div class="tool-card"><div class="tool-title">📄 AI Resume Builder</div>
+        <p class="small muted mb8">Apni details daalo — AI professional resume banayega!</p>
+        <textarea class="inp" id="resumeData" rows="6" placeholder="Naam: Rahul Kumar&#10;Phone: 9876543210&#10;Email: rahul@gmail.com&#10;Education: B.Sc Computer, Delhi Univ 2023&#10;Skills: Python, MS Office, English&#10;Experience: Data entry 1 year&#10;Projects: School Management System"></textarea>
+        <div class="flex gap8 mb8">
+          <button class="btn btn-p btn-sm" onclick="buildResume('en')">🇬🇧 English Resume</button>
+          <button class="btn btn-s btn-sm" onclick="buildResume('hi')">🇮🇳 Hindi Resume</button>
+        </div>
+        <div id="resumeRes"></div></div>`;
+  }else if(t==='vocab'){
+    c.innerHTML=
+      `<div class="tool-card"><div class="tool-title">📖 Vocabulary Builder</div>
+        <input class="inp" id="vocabTopic" placeholder="Topic (e.g. Environment, Technology, Business)">
+        <div class="flex gap8 mb8">
+          <button class="btn btn-p btn-sm" onclick="buildVocab('hi')">🇮🇳 Hindi+English</button>
+          <button class="btn btn-s btn-sm" onclick="buildVocab('en')">🇬🇧 English Only</button>
+        </div>
+        <div id="vocabRes"></div></div>`;
+  }else if(t==='mindmap'){
+    c.innerHTML=
+      `<div class="tool-card"><div class="tool-title">🗺️ Mind Map Generator</div>
+        <input class="inp" id="mmTopic" placeholder="Topic (e.g. Photosynthesis, Indian History)">
+        <div class="flex gap8 mb8">
+          <button class="btn btn-p btn-sm" onclick="genMindMap('hi')">🇮🇳 Hindi</button>
+          <button class="btn btn-s btn-sm" onclick="genMindMap('en')">🇬🇧 English</button>
+        </div>
+        <div id="mmRes"></div></div>`;
+  }else if(t==='qpaper'){
+    c.innerHTML=
+      `<div class="tool-card"><div class="tool-title">📋 Question Paper Generator</div>
+        <input class="inp" id="qpSubj" placeholder="Subject (e.g. Physics, Mathematics)">
+        <input class="inp" id="qpClass" placeholder="Class (e.g. Class 10, Class 12)">
+        <select class="inp" id="qpDiff" style="cursor:pointer">
+          <option value="Easy">Easy</option>
+          <option value="Medium" selected>Medium</option>
+          <option value="Hard">Hard</option>
+          <option value="Mixed">Mixed (Board Pattern)</option>
+        </select>
+        <div class="flex gap8 mb8">
+          <button class="btn btn-p btn-sm" onclick="genQPaper('hi')">🇮🇳 Hindi</button>
+          <button class="btn btn-s btn-sm" onclick="genQPaper('en')">🇬🇧 English</button>
+        </div>
+        <div id="qpRes"></div></div>`;
+  }else if(t==='links'){
+    c.innerHTML=
+      `<div class="tool-card"><div class="tool-title">🔗 Free Resources</div><div class="cbody">
+        <h3>📚 NCERT Books (Free)</h3>
+        <p><a href="https://ncert.nic.in" target="_blank" class="btn btn-p btn-sm">ncert.nic.in →</a></p>
+        <h3>🎓 Khan Academy Hindi</h3>
+        <p><a href="https://hi.khanacademy.org" target="_blank" class="btn btn-p btn-sm">hi.khanacademy.org →</a></p>
+        <h3>💼 Sarkari Jobs</h3>
+        <p><a href="https://sarkariresult.com" target="_blank" class="btn btn-s btn-sm">SarkariResult.com →</a>
+           <a href="https://rojgarresult.com" target="_blank" class="btn btn-s btn-sm" style="margin-left:6px">RojgarResult.com →</a></p>
+        <h3>📰 Hindi News</h3>
+        <p><a href="https://ndtv.in" target="_blank" class="btn btn-s btn-sm">NDTV Hindi →</a>
+           <a href="https://aajtak.in" target="_blank" class="btn btn-s btn-sm" style="margin-left:6px">Aaj Tak →</a></p>
+        <h3>📖 Wikipedia Hindi</h3>
+        <p><a href="https://hi.wikipedia.org" target="_blank" class="btn btn-s btn-sm">hi.wikipedia.org →</a></p>
+      </div></div>`;
+  }else if(t==='ocr'){
+    c.innerHTML=
+      `<div class="tool-card"><div class="tool-title">📷 Image → Text (OCR)</div>
+        <p class="small muted mb8">Image bhejo — AI text extract karke explain karega!</p>
+        <label style="display:block;padding:20px;border:2px dashed var(--brd);border-radius:12px;text-align:center;cursor:pointer;margin-bottom:10px" for="ocrFile">
+          📷 Image Select Karo<br><span class="small muted">Camera ya Gallery se</span>
+        </label>
+        <input type="file" id="ocrFile" accept="image/*" style="display:none" onchange="processOCR(this)">
+        <div id="ocrRes"></div></div>`;
   }
 }
 function pStart(){if(pI)return;const tot=(pM==='work'?25:5)*60;
   pI=setInterval(()=>{if(pS<=0){pPause();pM=pM==='work'?'break':'work';pS=(pM==='work'?25:5)*60;}
     pS--;const m=Math.floor(pS/60),s=pS%60;
-    setEl('pDisp',`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`);
+    setEl('pDisp',String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'));
     setEl('pMode',pM==='work'?'Study Time 📚':'Break Time ☕');
-    const a=document.getElementById('pArc');if(a){const e=tot-pS;a.style.strokeDashoffset=471-(471*(e/tot));}
+    const a=document.getElementById('pArc');if(a){const e=tot-pS;a.style.strokeDashoffset=452-(452*(e/tot));}
   },1000);}
 function pPause(){clearInterval(pI);pI=null;}
 function pReset(){pPause();pS=25*60;pM='work';setEl('pDisp','25:00');setEl('pMode','Study Time 📚');}
 function calcCD(){
-  const n=document.getElementById('eName')?.value||'Exam';const dt=document.getElementById('eDate')?.value;if(!dt)return;
-  const days=Math.ceil((new Date(dt)-new Date())/864e5);const r=document.getElementById('cdR');if(!r)return;
-  if(days<0)r.innerHTML=`<div class="center" style="padding:12px;background:var(--card2);border-radius:10px;color:var(--r)">❌ ${n} ho chuka!</div>`;
-  else if(days===0)r.innerHTML=`<div class="center" style="padding:12px;background:var(--card2);border-radius:10px;color:var(--o)">⚠️ Aaj hai! Best of luck! 🍀</div>`;
-  else r.innerHTML=`<div class="center" style="padding:16px;background:var(--card2);border-radius:12px">
-    <div style="font-size:44px;font-weight:900;color:var(--p)">${days}</div>
-    <div class="bold mt8">din baaki</div><div class="small muted mt4">${n}</div>
-    <p class="small muted mt8">${days>60?'💪 Bahut waqt!':days>14?'📚 Revision karo!':days>3?'🔥 Last revision!':'🍀 All the best!'}</p>
-  </div>`;
+  const n=document.getElementById('eName')?.value||'Exam';
+  const dt=document.getElementById('eDate')?.value;if(!dt)return;
+  const days=Math.ceil((new Date(dt)-new Date())/864e5);
+  const r=document.getElementById('cdR');if(!r)return;
+  if(days<0)r.innerHTML='<div class="center" style="padding:12px;background:var(--card2);border-radius:10px;color:var(--r)">❌ '+escH(n)+' ho chuka!</div>';
+  else if(days===0)r.innerHTML='<div class="center" style="padding:12px;background:var(--card2);border-radius:10px;color:var(--o)">⚠️ Aaj hai! Best of luck! 🍀</div>';
+  else r.innerHTML='<div class="center" style="padding:16px;background:var(--card2);border-radius:12px">'+
+    '<div style="font-size:44px;font-weight:900;color:var(--p)">'+days+'</div>'+
+    '<div class="bold mt8">din baaki</div><div class="small muted mt4">'+escH(n)+'</div>'+
+    '<p class="small muted mt8">'+(days>60?'💪 Bahut waqt!':days>14?'📚 Revision karo!':days>3?'🔥 Last revision!':'🍀 All the best!')+'</p></div>';
 }
 async function makeNote(lang){
   const t=document.getElementById('nTopic')?.value?.trim();if(!t){alert('Topic likho!');return;}
-  const r=document.getElementById('nRes');r.innerHTML='<div class="loader" style="padding:12px"><div class="spin"></div></div>';
+  const r=document.getElementById('nRes');
+  r.innerHTML='<div class="loader" style="padding:12px"><div class="spin"></div></div>';
   const li=lang==='en'?'in English':'Hindi mein';
-  const p=`${t} ke complete study notes ${li}. Definition, Key Points, Formulas/Dates, Examples, Exam Tips. Markdown.`;
-  const n=await getAI(p,'study');
-  r.innerHTML=`<div style="background:var(--card2);border-radius:12px;padding:14px;border:1px solid var(--brd)">
-    <div class="bold small mb8" style="color:var(--p)">📝 ${t}</div>
-    <div class="cbody">${mdH(n)}</div>
-    <div class="flex gap8 mt8">
-      <button class="btn btn-p btn-sm" onclick="copyText(this)">📋 Copy</button>
-      <button class="btn btn-s btn-sm" onclick="saveFromTool('${t.replace(/'/g,"\\'")}',this)">💾 Save</button>
-    </div></div>`;
+  const n=await getAI(t+' ke complete study notes '+li+'. Definition, Key Points, Formulas/Dates, Examples, Exam Tips. Markdown.','study');
+  r.innerHTML=
+    '<div style="background:var(--card2);border-radius:12px;padding:14px;border:1px solid var(--brd)">'+
+    '<div class="bold small mb8" style="color:var(--p)">📝 '+escH(t)+'</div>'+
+    '<div class="cbody">'+mdH(n)+'</div>'+
+    '<div class="flex gap8 mt8">'+
+    '<button class="btn btn-p btn-sm" onclick="saveNoteLocal(\''+escQ(t)+'\',document.getElementById(\'nRes\').querySelector(\'.cbody\').innerText)">💾 Save Note</button>'+
+    '<button class="btn btn-s btn-sm" onclick="copyEl(\'nRes\')">📋 Copy</button>'+
+    '<button class="btn btn-s btn-sm" onclick="downloadTxt(\''+escQ(t)+'\',document.getElementById(\'nRes\').querySelector(\'.cbody\').innerText)">⬇️ Download .txt</button>'+
+    '</div></div>';
 }
 async function buildResume(lang){
   const data=document.getElementById('resumeData')?.value?.trim();if(!data){alert('Details daalo!');return;}
   const r=document.getElementById('resumeRes');
   r.innerHTML='<div class="loader" style="padding:12px"><div class="spin"></div>AI resume bana raha hai...</div>';
   const p=lang==='en'
-    ?`Create a professional ATS-friendly resume from:\n${data}\n\nFormat: Name, Contact, Career Objective, Education, Skills, Experience, Projects, Languages. Clean format.`
-    :`Is information se professional resume banao:\n${data}\n\nFormat: Naam, Contact, Lakshya, Shiksha, Skills, Anubhav, Languages. Clean format.`;
+    ?'Create a professional ATS-friendly resume:\n'+data+'\n\nFormat: Name, Contact, Career Objective, Education, Skills, Experience, Projects, Languages. Bold headings.'
+    :'Professional resume banao:\n'+data+'\n\nFormat: Naam, Contact, Uddeshya, Shiksha, Skills, Anubhav, Projects, Languages. Bold headings.';
   const resume=await getAI(p,'resume');
-  r.innerHTML=`<div style="background:var(--card2);border-radius:12px;padding:14px;border:1px solid var(--brd)">
-    <div class="bold small mb8" style="color:var(--p)">📄 Aapka Resume</div>
-    <div class="cbody" style="white-space:pre-wrap;font-family:monospace;font-size:12px">${resume}</div>
-    <div class="flex gap8 mt8 fw">
-      <button class="btn btn-p btn-sm" onclick="copyText(this)">📋 Copy</button>
-      <a href="https://wa.me/?text=${encodeURIComponent(resume.slice(0,500))}" target="_blank" class="btn btn-s btn-sm">📤 WhatsApp</a>
-    </div></div>`;
+  r.innerHTML=
+    '<div style="background:var(--card2);border-radius:12px;padding:14px;border:1px solid var(--brd)">'+
+    '<div class="bold small mb8" style="color:var(--p)">📄 Aapka Resume</div>'+
+    '<div class="cbody" style="white-space:pre-wrap;font-size:11px;font-family:monospace">'+escH(resume)+'</div>'+
+    '<div class="flex gap8 mt8 fw">'+
+    '<button class="btn btn-p btn-sm" onclick="copyEl(\'resumeRes\')">📋 Copy</button>'+
+    '<button class="btn btn-s btn-sm" onclick="downloadTxt(\'Resume\',document.getElementById(\'resumeRes\').querySelector(\'.cbody\').innerText)">⬇️ Download .txt</button>'+
+    '<a href="https://wa.me/?text='+encodeURIComponent('📄 My Resume:\n\n'+resume.slice(0,500))+'" target="_blank" class="btn btn-s btn-sm">📤 WhatsApp</a>'+
+    '</div></div>';
 }
-function copyText(btn){
-  const txt=btn.parentElement?.previousElementSibling?.innerText||'';
-  navigator.clipboard?.writeText(txt).then(()=>{btn.textContent='✅ Copied!';});
+async function buildVocab(lang){
+  const t=document.getElementById('vocabTopic')?.value?.trim();if(!t){alert('Topic likho!');return;}
+  const r=document.getElementById('vocabRes');
+  r.innerHTML='<div class="loader" style="padding:10px"><div class="spin"></div></div>';
+  const li=lang==='en'?'in English':'in English with Hindi translation';
+  const result=await getAI('Vocabulary builder '+li+' for "'+t+'". 10 important words/phrases. For each: meaning, example sentence, synonym, antonym. Markdown.','study');
+  r.innerHTML='<div class="cbody">'+mdH(result)+'</div>'+
+    '<button class="btn btn-s btn-sm mt8" onclick="saveNoteLocal(\'Vocab: '+escQ(t)+'\',document.getElementById(\'vocabRes\').querySelector(\'.cbody\').innerText)">💾 Save</button>';
 }
-function saveFromTool(title,btn){
-  const content=btn.parentElement?.previousElementSibling?.innerText||'';
-  const notes=JSON.parse(localStorage.getItem('myNotes')||'[]');
-  notes.unshift({id:Date.now(),title,content,ts:new Date().toLocaleDateString()});
-  localStorage.setItem('myNotes',JSON.stringify(notes.slice(0,50)));
-  btn.textContent='✅ Saved!';btn.disabled=true;
+async function genMindMap(lang){
+  const t=document.getElementById('mmTopic')?.value?.trim();if(!t){alert('Topic likho!');return;}
+  const r=document.getElementById('mmRes');
+  r.innerHTML='<div class="loader" style="padding:10px"><div class="spin"></div></div>';
+  const li=lang==='en'?'in English':'Hindi mein';
+  const result=await getAI('Create a detailed mind map for "'+t+'" '+li+'.\nMain topic in center, 5-6 main branches, 3-4 sub-points each.\nFormat as text mind map with indentation and symbols. Markdown.','study');
+  r.innerHTML='<div class="cbody">'+mdH(result)+'</div>'+
+    '<button class="btn btn-s btn-sm mt8" onclick="saveNoteLocal(\'Mind Map: '+escQ(t)+'\',document.getElementById(\'mmRes\').querySelector(\'.cbody\').innerText)">💾 Save</button>';
+}
+async function genQPaper(lang){
+  const subj=document.getElementById('qpSubj')?.value?.trim()||'Science';
+  const cls=document.getElementById('qpClass')?.value?.trim()||'Class 10';
+  const diff=document.getElementById('qpDiff')?.value||'Medium';
+  const r=document.getElementById('qpRes');
+  r.innerHTML='<div class="loader" style="padding:10px"><div class="spin"></div>Question paper ban raha hai...</div>';
+  const li=lang==='en'?'in English':'Hindi mein';
+  const result=await getAI(
+    'Create a complete '+diff+' difficulty question paper '+li+'.\nSubject: '+subj+', Class: '+cls+'.\nSection A: 10 MCQ (1 mark). Section B: 5 Short Answer (2 marks). Section C: 3 Long Answer (5 marks).\nTotal: 35 marks, Time: 2 hours.\nAlso provide complete Answer Key at end. Markdown.','study');
+  r.innerHTML='<div class="cbody">'+mdH(result)+'</div>'+
+    '<div class="flex gap8 mt8">'+
+    '<button class="btn btn-p btn-sm" onclick="downloadTxt(\''+escQ(subj)+' QP\',document.getElementById(\'qpRes\').querySelector(\'.cbody\').innerText)">⬇️ Download</button>'+
+    '<button class="btn btn-s btn-sm" onclick="saveNoteLocal(\'QP: '+escQ(subj)+'\',document.getElementById(\'qpRes\').querySelector(\'.cbody\').innerText)">💾 Save</button>'+
+    '</div>';
+}
+async function processOCR(input){
+  const file=input.files[0];if(!file)return;
+  const r=document.getElementById('ocrRes');
+  r.innerHTML='<div class="loader" style="padding:10px"><div class="spin"></div>Image process ho rahi hai...</div>';
+  const reader=new FileReader();
+  reader.onload=async function(e){
+    const base64=e.target.result.split(',')[1];
+    try{
+      const result=await callGeminiVision(base64,'Extract ALL text from this image. If handwritten, transcribe it. If it is a question or problem, solve it too. Be thorough.');
+      r.innerHTML='<div class="cbody">'+mdH(result)+'</div>'+
+        '<div class="flex gap8 mt8">'+
+        '<button class="btn btn-s btn-sm" onclick="saveNoteLocal(\'OCR Text\',document.getElementById(\'ocrRes\').querySelector(\'.cbody\').innerText)">💾 Save</button>'+
+        '<button class="btn btn-s btn-sm" onclick="copyEl(\'ocrRes\')">📋 Copy</button>'+
+        '</div>';
+    }catch{r.innerHTML='<div class="empty"><div class="ei">❌</div><p class="muted">Image process nahi ho paayi.<br>Clear image bhejo.</p></div>';}
+  };
+  reader.readAsDataURL(file);input.value='';
+}
+function copyEl(id){
+  const el=document.getElementById(id);
+  const txt=el?.innerText||'';
+  navigator.clipboard?.writeText(txt).then(()=>alert('✅ Copied!'));
+}
+function downloadTxt(name,content){
+  const blob=new Blob([content],{type:'text/plain;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=(name||'IndiaStudyAI')+'.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
-// ── NOTES ─────────────────────────────────────────────────────────────────────
+// ══ NOTES ══
 function loadNotes(){
   const notes=JSON.parse(localStorage.getItem('myNotes')||'[]');
   const c=document.getElementById('notes-list');
-  if(!notes.length){c.innerHTML='<div class="empty"><div class="ei">📝</div><p class="muted">Koi note nahi!<br>Study topics se notes save karo.</p></div>';return;}
-  c.innerHTML=notes.map((n,i)=>`
-    <div class="topic-item" onclick="viewNote(${i})">
+  if(!notes.length){
+    c.innerHTML='<div class="empty"><div class="ei">📝</div><p class="muted">Koi note nahi!<br>AI se notes banao aur save karo.</p></div>';return;
+  }
+  c.innerHTML=notes.map((n,i)=>
+    `<div class="topic-item">
       <div class="topic-ico">📝</div>
-      <div style="flex:1"><div class="topic-title">${n.title}</div><div class="topic-sub">${n.ts}</div></div>
-      <button class="btn btn-sm" style="background:var(--r);color:#fff;border:none;padding:6px 10px;font-size:11px" onclick="delNote(event,${i})">🗑️</button>
+      <div style="flex:1" onclick="viewNote(${i})"><div class="topic-title">${escH(n.title)}</div><div class="topic-sub">${n.ts}</div></div>
+      <button onclick="delNote(event,${i})" style="background:var(--r);color:#fff;border:none;padding:6px 10px;border-radius:8px;font-size:10px;font-weight:700;cursor:pointer">🗑️</button>
     </div>`).join('');
 }
 function viewNote(i){
   const notes=JSON.parse(localStorage.getItem('myNotes')||'[]');
   const n=notes[i];if(!n)return;
   const c=document.getElementById('notes-list');
-  const wa=`https://wa.me/?text=${encodeURIComponent('📝 '+n.title+'\n\n'+n.content.slice(0,400)+'\n\n— @IndiaStudyAI_Bot')}`;
-  c.innerHTML=`<button class="btn btn-s btn-sm mb12" onclick="loadNotes()">← Wapas</button>
-    <div class="content-card"><h2>📝 ${n.title}</h2>
+  const wa='https://wa.me/?text='+encodeURIComponent('📝 '+n.title+'\n\n'+n.content.slice(0,400)+'\n\n— @IndiaStudyAI_Bot');
+  c.innerHTML=
+    `<button class="btn btn-s btn-sm mb12" onclick="loadNotes()">← Wapas</button>
+    <div class="content-card">
+      <h2>📝 ${escH(n.title)}</h2>
       <div class="cbody">${mdH(n.content)}</div>
       <div class="flex gap8 mt12 fw">
         <a href="${wa}" target="_blank" class="btn btn-p btn-sm">📤 WhatsApp</a>
-        <button class="btn btn-s btn-sm" onclick="navigator.clipboard?.writeText(this.closest('.content-card').querySelector('.cbody').innerText).then(()=>alert('✅ Copied!'))">📋 Copy</button>
-        <button class="btn btn-s btn-sm" style="color:var(--r);border-color:var(--r)" onclick="delNote(null,${i})">🗑️ Delete</button>
-      </div></div>`;
+        <button class="btn btn-s btn-sm" onclick="navigator.clipboard?.writeText(document.querySelector('.content-card .cbody').innerText).then(()=>alert('✅ Copied!'))">📋 Copy</button>
+        <button class="btn btn-s btn-sm" onclick="downloadTxt('${escQ(n.title)}',document.querySelector('.content-card .cbody').innerText)">⬇️ Download</button>
+        <button class="btn btn-r btn-sm" onclick="delNote(null,${i})">🗑️ Delete</button>
+      </div>
+    </div>`;
 }
 function delNote(e,i){
   if(e)e.stopPropagation();
+  if(!confirm('Delete karo?'))return;
   const notes=JSON.parse(localStorage.getItem('myNotes')||'[]');
   notes.splice(i,1);localStorage.setItem('myNotes',JSON.stringify(notes));loadNotes();
 }
 function showNewNote(){
   const c=document.getElementById('notes-list');
-  c.innerHTML=`<button class="btn btn-s btn-sm mb12" onclick="loadNotes()">← Cancel</button>
+  c.innerHTML=
+    `<button class="btn btn-s btn-sm mb12" onclick="loadNotes()">← Cancel</button>
     <div class="tool-card">
-      <input class="inp" id="newNoteTitle" placeholder="Note title...">
-      <textarea class="inp" id="newNoteContent" rows="6" placeholder="Note content..." style="resize:vertical"></textarea>
+      <input class="inp" id="newNoteTitle" placeholder="Note ka title...">
+      <textarea class="inp" id="newNoteContent" rows="6" placeholder="Note content..."></textarea>
       <button class="btn btn-p btn-full" onclick="saveNewNote()">💾 Save Note</button>
     </div>`;
 }
@@ -1128,23 +1432,38 @@ function saveNewNote(){
   const title=document.getElementById('newNoteTitle')?.value?.trim();
   const content=document.getElementById('newNoteContent')?.value?.trim();
   if(!title||!content){alert('Title aur content daalo!');return;}
+  saveNoteLocal(title,content);loadNotes();
+}
+function saveNoteLocal(title,content){
   const notes=JSON.parse(localStorage.getItem('myNotes')||'[]');
-  notes.unshift({id:Date.now(),title,content,ts:new Date().toLocaleDateString()});
-  localStorage.setItem('myNotes',JSON.stringify(notes.slice(0,50)));
-  loadNotes();
+  notes.unshift({id:Date.now(),title:title.slice(0,80),content:content.slice(0,5000),ts:new Date().toLocaleDateString('hi-IN')});
+  localStorage.setItem('myNotes',JSON.stringify(notes.slice(0,60)));
 }
 
-// ── AI ENGINE ─────────────────────────────────────────────────────────────────
+// ══ AI ENGINE ══
 async function getAI(prompt,mode){
-  const fns=[()=>pollOAI(prompt,mode),()=>pollTxt(prompt)];
-  for(const fn of fns){try{const r=await fn();if(r&&r.length>10)return r;}catch{}}
-  return"⚠️ AI abhi busy hai. Thodi der baad try karo.";
+  const fns=[
+    ()=>pollOAI(prompt,mode),
+    ()=>pollTxt(prompt),
+    ()=>tryHuggingFace(prompt),
+  ];
+  // Try all in parallel, return first good response
+  return new Promise(async(resolve)=>{
+    let resolved=false;
+    const finish=(r)=>{if(!resolved&&r&&r.length>10){resolved=true;resolve(r);}};
+    // Try sequentially with short-circuit
+    for(const fn of fns){
+      if(resolved)break;
+      try{const r=await fn();finish(r);}catch{}
+    }
+    if(!resolved)resolve('⚠️ Abhi AI busy hai. Thodi der baad try karo.');
+  });
 }
 async function pollOAI(prompt,mode){
   const sysMap={
-    study:`Expert Indian teacher. ${studyLang==='en'?'Answer in English.':'Hindi mein.'} Clear step-by-step. Markdown. Real examples.`,
-    news:`Indian news/updates expert. ${studyLang==='en'?'English.':'Hindi.'} Latest 2026 real info. Bullets. Bold titles.`,
-    resume:`Professional resume writer. Clean ATS-friendly format.`,
+    study:studyLang==='en'?'Expert Indian teacher. Answer clearly in English. Markdown. 2026.':'Expert Indian teacher. Hindi mein clearly samjhao. Markdown. 2026.',
+    news:newsLang==='en'?'Indian news expert. English bullets. Latest 2026.':'Indian news/sarkari expert. Hindi bullets. Latest 2026.',
+    resume:'Professional resume writer. Clean ATS-friendly format.',
   };
   const sys=sysMap[mode]||sysMap.study;
   const r=await fetch('https://text.pollinations.ai/openai',{
@@ -1155,36 +1474,61 @@ async function pollOAI(prompt,mode){
   const d=await r.json();return d?.choices?.[0]?.message?.content||'';
 }
 async function pollTxt(p){
-  const r=await fetch(`https://text.pollinations.ai/${encodeURIComponent(p.slice(0,600))}`,{signal:AbortSignal.timeout(15000),headers:{Accept:'text/plain'}});
+  const r=await fetch('https://text.pollinations.ai/'+encodeURIComponent(p.slice(0,600).replace(/\n/g,' ')),
+    {signal:AbortSignal.timeout(15000),headers:{Accept:'text/plain'}});
   if(!r.ok)throw new Error(r.status);return await r.text();
 }
-async function getAINews(prompt,type){
-  const sys=type==='sarkari'?`Indian sarkari updates. Latest 2026 real. Hindi bullets. Bold title, detail, website.`:`Indian news. Latest 2026. Hindi bullets. Bold headline, summary.`;
-  return await getAI(`${sys}\n\n${prompt}\n\n6-7 items. Markdown.`,'news');
+async function tryHuggingFace(prompt){
+  const r=await fetch('https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3',{
+    method:'POST',signal:AbortSignal.timeout(18000),
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({inputs:prompt.slice(0,500),parameters:{max_new_tokens:500,return_full_text:false}})});
+  if(!r.ok)throw new Error(r.status);
+  const d=await r.json();
+  return Array.isArray(d)?d[0]?.generated_text||'':'';
+}
+async function callGeminiVision(base64,prompt){
+  // Uses Pollinations as proxy for vision
+  const r=await fetch('https://text.pollinations.ai/openai',{
+    method:'POST',signal:AbortSignal.timeout(25000),
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'openai',messages:[{role:'user',content:[
+      {type:'text',text:prompt},
+      {type:'image_url',image_url:{url:'data:image/jpeg;base64,'+base64}}
+    ]}],seed:Math.floor(Math.random()*9999),private:true})});
+  if(!r.ok)throw new Error(r.status);
+  const d=await r.json();
+  return d?.choices?.[0]?.message?.content||'❌ Image process nahi ho paayi.';
 }
 
-// ── CHAT HELPER ───────────────────────────────────────────────────────────────
-function addMsg(html,cls,cid='aitMsgs'){
-  const m=document.createElement('div');m.className=`msg ${cls}`;m.innerHTML=html;
-  const c=document.getElementById(cid);if(c){c.appendChild(m);c.scrollTop=c.scrollHeight;}
+// ══ CHAT HELPER ══
+function addMsg(html,cls,cid){
+  const m=document.createElement('div');m.className='msg '+cls;m.innerHTML=html;
+  const c=document.getElementById(cid||'aitMsgs');
+  if(c){c.appendChild(m);c.scrollTop=c.scrollHeight;}
   return m;
 }
 
-// ── MARKDOWN ──────────────────────────────────────────────────────────────────
+// ══ MARKDOWN ══
 function mdH(t){
   if(!t)return'';
-  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  return t
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
     .replace(/\*(.*?)\*/g,'<em>$1</em>')
-    .replace(/^#{1,3} (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^# (.+)$/gm,'<h3>$1</h3>')
     .replace(/^[•\-\*] (.+)$/gm,'<p>• $1</p>')
     .replace(/^\d+\. (.+)$/gm,'<p>$1</p>')
     .replace(/\n\n/g,'<br>')
-    .replace(/`([^`]+)`/g,'<code style="background:var(--card2);padding:2px 6px;border-radius:4px;font-size:11px;color:#c4b5fd;font-family:monospace">$1</code>')
-    .replace(/\[([^\]]+)\]\((https?[^\)]+)\)/g,'<a href="$2" target="_blank" style="color:var(--p);font-weight:700">$1</a>');
+    .replace(/`([^`]+)`/g,'<code style="background:var(--card2);padding:2px 5px;border-radius:4px;font-size:10px;color:#c4b5fd;font-family:monospace">$1</code>')
+    .replace(/\[([^\]]+)\]\((https?[^\)]+)\)/g,'<a href="$2" target="_blank" style="color:var(--p);font-weight:700">$1 →</a>');
 }
 function dH(s){const e=document.createElement('div');e.innerHTML=s;return e.textContent;}
+function escH(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function escQ(s){return String(s||'').replace(/'/g,"\\'").replace(/\n/g,' ');}
 function shuf(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 </script>
 </body>
-  </html>
+</html>
