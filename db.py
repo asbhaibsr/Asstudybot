@@ -1,6 +1,7 @@
 import os
 from datetime import datetime, date, timedelta
 from motor.motor_asyncio import AsyncIOMotorClient
+from typing import Optional  # यह import जोड़ना था
 
 MONGO_URI = os.environ.get("MONGO_URI","mongodb+srv://USER:PASS@cluster.mongodb.net/studybot")
 
