@@ -4,6 +4,7 @@ import datetime
 from bson import ObjectId
 from typing import Optional, List, Dict, Any
 import logging
+import asyncio
 
 log = logging.getLogger(__name__)
 
@@ -18,12 +19,37 @@ class Database:
         self.referrals = None
         self.feedback = None
         self.cache = None
+        self._connected = False
     
     async def connect(self):
-        """Connect to MongoDB"""
-        mongo_url = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
+        """Connect to MongoDB with proper error handling"""
+        mongo_url = os.environ.get("MONGO_URL", "")
+        
+        # Check if MongoDB URL is provided
+        if not mongo_url:
+            log.warning("⚠️ MONGO_URL not set - running without database")
+            self._connected = False
+            return False
+        
+        # Don't use localhost in production
+        if "localhost" in mongo_url or "127.0.0.1" in mongo_url:
+            log.error("❌ Cannot use localhost MongoDB in cloud! Please use MongoDB Atlas")
+            log.info("Get free MongoDB Atlas: https://www.mongodb.com/cloud/atlas")
+            self._connected = False
+            return False
+        
+        # Try to connect with timeout
         try:
-            self.client = AsyncIOMotorClient(mongo_url)
+            log.info("🔄 Connecting to MongoDB...")
+            self.client = AsyncIOMotorClient(
+                mongo_url,
+                serverSelectionTimeoutMS=5000,
+                connectTimeoutMS=5000
+            )
+            
+            # Ping database to verify connection
+            await self.client.admin.command('ping')
+            
             self.db = self.client["IndiaStudyAI"]
             self.users = self.db["users"]
             self.questions = self.db["questions"]
@@ -33,23 +59,38 @@ class Database:
             self.feedback = self.db["feedback"]
             self.cache = self.db["cache"]
             
-            # Create indexes
-            await self.users.create_index("user_id", unique=True)
-            await self.questions.create_index([("user_id", 1), ("timestamp", -1)])
-            await self.notes.create_index([("user_id", 1), ("timestamp", -1)])
-            await self.reminders.create_index("remind_at")
-            await self.cache.create_index("key", unique=True)
+            # Create indexes (don't fail if they exist)
+            try:
+                await self.users.create_index("user_id", unique=True)
+                await self.questions.create_index([("user_id", 1), ("timestamp", -1)])
+                await self.notes.create_index([("user_id", 1), ("timestamp", -1)])
+                await self.reminders.create_index("remind_at")
+                await self.cache.create_index("key", unique=True)
+            except Exception as e:
+                log.debug(f"Index creation (might already exist): {e}")
             
+            self._connected = True
             log.info("✅ Database connected successfully")
             return True
+            
         except Exception as e:
             log.error(f"❌ Database connection failed: {e}")
+            log.info("⚠️ Continuing without database - some features will be limited")
+            self._connected = False
             return False
     
-    # ==================== USER MANAGEMENT ====================
+    def is_connected(self) -> bool:
+        """Check if database is connected"""
+        return self._connected
+    
+    # ==================== USER MANAGEMENT (with fallback) ====================
     
     async def add_user(self, user_id: int, name: str, username: str = None, ref_by: int = None):
-        """Add new user to database"""
+        """Add new user to database with fallback"""
+        if not self._connected:
+            log.debug(f"DB not connected - skipping add_user for {user_id}")
+            return True
+        
         try:
             user = await self.users.find_one({"user_id": user_id})
             
@@ -61,7 +102,7 @@ class Database:
                     "username": username,
                     "joined": datetime.datetime.now(),
                     "last_active": datetime.datetime.now(),
-                    "points": 50,  # Joining bonus
+                    "points": 50,
                     "streak": 0,
                     "max_streak": 0,
                     "total_questions": 0,
@@ -88,22 +129,43 @@ class Database:
                 # Handle referral
                 if ref_by and ref_by != user_id:
                     await self.add_referral(ref_by, user_id)
-                return True
-            return False
+            return True
         except Exception as e:
             log.error(f"Error adding user: {e}")
             return False
     
     async def get_user(self, user_id: int) -> Optional[Dict]:
-        """Get user by ID"""
+        """Get user by ID with fallback"""
+        if not self._connected:
+            # Return minimal user data
+            return {
+                "user_id": user_id,
+                "name": "User",
+                "language": "hi",
+                "points": 0,
+                "premium": False,
+                "class_type": None,
+                "course": None,
+                "goal": None
+            }
+        
         try:
             return await self.users.find_one({"user_id": user_id})
         except Exception as e:
             log.error(f"Error getting user: {e}")
-            return None
+            return {
+                "user_id": user_id,
+                "name": "User",
+                "language": "hi",
+                "points": 0,
+                "premium": False
+            }
     
     async def update_profile(self, user_id: int, class_type: str, course: str, goal: str):
         """Update user profile"""
+        if not self._connected:
+            return True
+        
         try:
             await self.users.update_one(
                 {"user_id": user_id},
@@ -121,6 +183,9 @@ class Database:
     
     async def update_language(self, user_id: int, language: str):
         """Update user language preference"""
+        if not self._connected:
+            return True
+        
         try:
             await self.users.update_one(
                 {"user_id": user_id},
@@ -133,6 +198,9 @@ class Database:
     
     async def update_settings(self, user_id: int, **kwargs):
         """Update user settings"""
+        if not self._connected:
+            return True
+        
         try:
             await self.users.update_one(
                 {"user_id": user_id},
@@ -145,6 +213,9 @@ class Database:
     
     async def is_blocked(self, user_id: int) -> bool:
         """Check if user is blocked"""
+        if not self._connected:
+            return False
+        
         try:
             user = await self.get_user(user_id)
             return user.get("blocked", False) if user else False
@@ -153,6 +224,9 @@ class Database:
     
     async def block_user(self, user_id: int):
         """Block a user"""
+        if not self._connected:
+            return True
+        
         try:
             await self.users.update_one(
                 {"user_id": user_id},
@@ -165,6 +239,9 @@ class Database:
     
     async def unblock_user(self, user_id: int):
         """Unblock a user"""
+        if not self._connected:
+            return True
+        
         try:
             await self.users.update_one(
                 {"user_id": user_id},
@@ -179,6 +256,9 @@ class Database:
     
     async def is_premium(self, user_id: int) -> bool:
         """Check if user has premium"""
+        if not self._connected:
+            return False
+        
         try:
             user = await self.get_user(user_id)
             if not user or not user.get("premium"):
@@ -196,6 +276,9 @@ class Database:
     
     async def set_premium(self, user_id: int, days: int = 30):
         """Set premium for user"""
+        if not self._connected:
+            return False
+        
         try:
             expiry = datetime.datetime.now() + datetime.timedelta(days=days)
             await self.users.update_one(
@@ -212,6 +295,9 @@ class Database:
     
     async def remove_premium(self, user_id: int):
         """Remove premium from user"""
+        if not self._connected:
+            return True
+        
         try:
             await self.users.update_one(
                 {"user_id": user_id},
@@ -226,6 +312,9 @@ class Database:
     
     async def add_points(self, user_id: int, points: int):
         """Add points to user"""
+        if not self._connected:
+            return True
+        
         try:
             await self.users.update_one(
                 {"user_id": user_id},
@@ -238,6 +327,9 @@ class Database:
     
     async def update_streak(self, user_id: int):
         """Update daily streak"""
+        if not self._connected:
+            return True
+        
         try:
             user = await self.get_user(user_id)
             if not user:
@@ -251,7 +343,7 @@ class Database:
                 new_streak = user.get("streak", 0) + 1
                 update = {
                     "$set": {"streak": new_streak, "last_active": datetime.datetime.now()},
-                    "$inc": {"points": 10}  # Bonus for streak
+                    "$inc": {"points": 10}
                 }
                 
                 if new_streak > user.get("max_streak", 0):
@@ -273,6 +365,9 @@ class Database:
     
     async def check_and_award(self, user_id: int):
         """Check and award achievements"""
+        if not self._connected:
+            return True
+        
         try:
             user = await self.get_user(user_id)
             if not user:
@@ -305,6 +400,9 @@ class Database:
     
     async def inc_usage(self, user_id: int, type: str):
         """Increment usage count"""
+        if not self._connected:
+            return True
+        
         try:
             today = datetime.datetime.now().date().isoformat()
             field = f"usage.{type}.{today}"
@@ -320,6 +418,9 @@ class Database:
     
     async def get_usage(self, user_id: int, type: str) -> int:
         """Get today's usage count"""
+        if not self._connected:
+            return 0
+        
         try:
             user = await self.get_user(user_id)
             if not user:
@@ -332,6 +433,9 @@ class Database:
     
     async def inc_api_usage(self, user_id: int, api: str):
         """Increment API usage"""
+        if not self._connected:
+            return True
+        
         try:
             today = datetime.datetime.now().date().isoformat()
             field = f"api_usage.{today}.{api}"
@@ -347,6 +451,9 @@ class Database:
     
     async def get_api_usage(self, user_id: int) -> Dict:
         """Get today's API usage"""
+        if not self._connected:
+            return {}
+        
         try:
             user = await self.get_user(user_id)
             if not user:
@@ -361,6 +468,9 @@ class Database:
     
     async def save_q(self, user_id: int, question: str, answer: str, api_used: str):
         """Save question-answer pair"""
+        if not self._connected:
+            return True
+        
         try:
             doc = {
                 "user_id": user_id,
@@ -386,6 +496,9 @@ class Database:
     
     async def get_chat_history(self, user_id: int, limit: int = 20) -> List:
         """Get user's chat history"""
+        if not self._connected:
+            return []
+        
         try:
             cursor = self.questions.find(
                 {"user_id": user_id}
@@ -397,6 +510,9 @@ class Database:
     
     async def delete_chat_item(self, user_id: int, item_id: str):
         """Delete a specific chat item"""
+        if not self._connected:
+            return True
+        
         try:
             await self.questions.delete_one({
                 "_id": ObjectId(item_id),
@@ -409,6 +525,9 @@ class Database:
     
     async def delete_chat_history(self, user_id: int):
         """Delete all chat history for user"""
+        if not self._connected:
+            return True
+        
         try:
             await self.questions.delete_many({"user_id": user_id})
             return True
@@ -418,8 +537,11 @@ class Database:
     
     # ==================== NOTES ====================
     
-    async def save_note(self, user_id: int, title: str, content: str, source: str = "manual"):
+    async def save_note(self, user_id: int, title: str, content: str, source: str = "manual") -> str:
         """Save a note"""
+        if not self._connected:
+            return ""
+        
         try:
             doc = {
                 "user_id": user_id,
@@ -436,6 +558,9 @@ class Database:
     
     async def get_user_notes(self, user_id: int) -> List:
         """Get all notes for user"""
+        if not self._connected:
+            return []
+        
         try:
             cursor = self.notes.find(
                 {"user_id": user_id}
@@ -447,6 +572,9 @@ class Database:
     
     async def get_note(self, user_id: int, note_id: str) -> Optional[Dict]:
         """Get a specific note"""
+        if not self._connected:
+            return None
+        
         try:
             return await self.notes.find_one({
                 "_id": ObjectId(note_id),
@@ -458,6 +586,9 @@ class Database:
     
     async def delete_note(self, user_id: int, note_id: str):
         """Delete a note"""
+        if not self._connected:
+            return True
+        
         try:
             await self.notes.delete_one({
                 "_id": ObjectId(note_id),
@@ -470,6 +601,9 @@ class Database:
     
     async def delete_all_notes(self, user_id: int):
         """Delete all notes for user"""
+        if not self._connected:
+            return True
+        
         try:
             await self.notes.delete_many({"user_id": user_id})
             return True
@@ -481,6 +615,9 @@ class Database:
     
     async def add_reminder(self, user_id: int, text: str, remind_at: datetime.datetime):
         """Add a reminder"""
+        if not self._connected:
+            return True
+        
         try:
             doc = {
                 "user_id": user_id,
@@ -497,6 +634,9 @@ class Database:
     
     async def get_user_reminders(self, user_id: int) -> List:
         """Get all reminders for user"""
+        if not self._connected:
+            return []
+        
         try:
             cursor = self.reminders.find({
                 "user_id": user_id,
@@ -509,6 +649,9 @@ class Database:
     
     async def get_due_reminders(self) -> List:
         """Get all due reminders"""
+        if not self._connected:
+            return []
+        
         try:
             cursor = self.reminders.find({
                 "remind_at": {"$lte": datetime.datetime.now()},
@@ -521,6 +664,9 @@ class Database:
     
     async def mark_reminder_sent(self, reminder_id: str):
         """Mark reminder as sent"""
+        if not self._connected:
+            return True
+        
         try:
             await self.reminders.update_one(
                 {"_id": ObjectId(reminder_id)},
@@ -535,6 +681,9 @@ class Database:
     
     async def add_referral(self, referrer_id: int, referred_id: int):
         """Add a referral"""
+        if not self._connected:
+            return False
+        
         try:
             # Check if already referred
             existing = await self.referrals.find_one({
@@ -580,6 +729,9 @@ class Database:
     
     async def get_referral_count(self, user_id: int) -> int:
         """Get user's referral count"""
+        if not self._connected:
+            return 0
+        
         try:
             user = await self.get_user(user_id)
             return user.get("ref_count", 0) if user else 0
@@ -590,6 +742,9 @@ class Database:
     
     async def save_feedback(self, user_id: int, rating: int, comment: str):
         """Save user feedback"""
+        if not self._connected:
+            return True
+        
         try:
             doc = {
                 "user_id": user_id,
@@ -607,6 +762,9 @@ class Database:
     
     async def set_exam(self, user_id: int, exam_name: str, exam_date: str):
         """Set user's exam date"""
+        if not self._connected:
+            return True
+        
         try:
             date_obj = datetime.datetime.strptime(exam_date, "%Y-%m-%d")
             await self.users.update_one(
@@ -623,6 +781,9 @@ class Database:
     
     async def get_exam_reminders(self) -> List:
         """Get users with exams approaching"""
+        if not self._connected:
+            return []
+        
         try:
             today = datetime.datetime.now()
             reminders = []
@@ -634,7 +795,7 @@ class Database:
             
             async for user in cursor:
                 days_left = (user["exam_date"] - today).days
-                if days_left in [1, 7, 30]:  # Remind on these days
+                if days_left in [1, 7, 30]:
                     reminders.append({
                         "user_id": user["user_id"],
                         "exam_name": user.get("exam_name", "Exam"),
@@ -650,6 +811,9 @@ class Database:
     
     async def save_study_plan(self, user_id: int, plan: str, exam_date: str, subjects: str):
         """Save study plan"""
+        if not self._connected:
+            return True
+        
         try:
             await self.users.update_one(
                 {"user_id": user_id},
@@ -669,6 +833,9 @@ class Database:
     
     async def get_study_plan(self, user_id: int) -> Optional[Dict]:
         """Get user's study plan"""
+        if not self._connected:
+            return None
+        
         try:
             user = await self.get_user(user_id)
             return user.get("study_plan") if user else None
@@ -679,6 +846,9 @@ class Database:
     
     async def set_cache(self, key: str, value: str, hours: int = 24):
         """Set cache value"""
+        if not self._connected:
+            return True
+        
         try:
             expiry = datetime.datetime.now() + datetime.timedelta(hours=hours)
             doc = {
@@ -698,6 +868,9 @@ class Database:
     
     async def get_cache(self, key: str) -> Optional[str]:
         """Get cache value"""
+        if not self._connected:
+            return None
+        
         try:
             doc = await self.cache.find_one({"key": key})
             if doc and doc.get("expiry") > datetime.datetime.now():
@@ -709,6 +882,9 @@ class Database:
     
     async def del_cache(self, key: str):
         """Delete cache"""
+        if not self._connected:
+            return True
+        
         try:
             await self.cache.delete_one({"key": key})
             return True
@@ -718,6 +894,9 @@ class Database:
     
     async def del_cache_prefix(self, prefix: str):
         """Delete all cache with prefix"""
+        if not self._connected:
+            return True
+        
         try:
             await self.cache.delete_many({"key": {"$regex": f"^{prefix}"}})
             return True
@@ -729,6 +908,9 @@ class Database:
     
     async def get_leaderboard(self, limit: int = 10) -> List:
         """Get top users by points"""
+        if not self._connected:
+            return []
+        
         try:
             cursor = self.users.find(
                 {"blocked": False}
@@ -740,6 +922,9 @@ class Database:
     
     async def get_rank(self, user_id: int) -> int:
         """Get user's rank"""
+        if not self._connected:
+            return 0
+        
         try:
             user = await self.get_user(user_id)
             if not user:
@@ -758,6 +943,9 @@ class Database:
     
     async def challenge_done_today(self, user_id: int) -> bool:
         """Check if user did daily challenge today"""
+        if not self._connected:
+            return False
+        
         try:
             user = await self.get_user(user_id)
             if not user:
@@ -772,6 +960,9 @@ class Database:
     
     async def mark_challenge_done(self, user_id: int):
         """Mark daily challenge as done"""
+        if not self._connected:
+            return True
+        
         try:
             await self.users.update_one(
                 {"user_id": user_id},
@@ -786,6 +977,17 @@ class Database:
     
     async def stats(self) -> Dict:
         """Get bot statistics"""
+        if not self._connected:
+            return {
+                "total": 0,
+                "active_today": 0,
+                "new_today": 0,
+                "premium": 0,
+                "blocked": 0,
+                "questions": 0,
+                "notes_total": 0
+            }
+        
         try:
             total = await self.users.count_documents({})
             today_start = datetime.datetime.combine(
@@ -832,6 +1034,9 @@ class Database:
     
     async def morning_notify_users(self) -> List:
         """Get users who want morning notifications"""
+        if not self._connected:
+            return []
+        
         try:
             cursor = self.users.find({
                 "notify_morning": True,
@@ -846,6 +1051,9 @@ class Database:
     
     async def all_users(self) -> List:
         """Get all users (for admin)"""
+        if not self._connected:
+            return []
+        
         try:
             cursor = self.users.find({})
             return await cursor.to_list(length=10000)
