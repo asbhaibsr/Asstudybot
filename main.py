@@ -10,10 +10,11 @@ from telegram.ext import (
     MessageHandler, filters, ContextTypes, ConversationHandler
 )
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+import requests
 
 from ai import (
     ask_ai, generate_pdf, image_to_text, fetch_updates,
-    generate_mindmap_image, generate_question_paper,
+    generate_mindmap_text, generate_question_paper,
     generate_study_plan, build_vocabulary
 )
 from db import db
@@ -31,6 +32,11 @@ OWNER_ID = int(os.environ.get("OWNER_ID", "0"))
 PORT = int(os.environ.get("PORT", 8080))
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL", "")
 MINI_APP_URL = os.environ.get("MINI_APP_URL", f"https://your-app.koyeb.app")
+
+# Check if token exists
+if not TOKEN:
+    log.error("❌ BOT_TOKEN environment variable not set!")
+    exit(1)
 
 # States for conversation
 (
@@ -53,12 +59,16 @@ def home():
     return jsonify({
         "status": "ok",
         "bot": "IndiaStudyAI 2026",
-        "message": "Bot is running!"
+        "message": "Bot is running!",
+        "db_connected": db.is_connected() if hasattr(db, 'is_connected') else False
     })
 
 @flask_app.route('/health')
 def health():
-    return jsonify({"status": "healthy"}), 200
+    return jsonify({
+        "status": "healthy",
+        "db_connected": db.is_connected() if hasattr(db, 'is_connected') else False
+    }), 200
 
 @flask_app.route('/app')
 @flask_app.route('/app/')
@@ -68,13 +78,6 @@ def serve_app():
 @flask_app.route('/app/<path:path>')
 def serve_app_files(path):
     return send_from_directory('app', path)
-
-@flask_app.route('/webhook', methods=['POST'])
-def webhook():
-    """Webhook for Telegram updates"""
-    update = Update.de_json(request.get_json(force=True), app.bot)
-    asyncio.run_coroutine_threadsafe(app.process_update(update), app.loop)
-    return jsonify({"status": "ok"}), 200
 
 def run_flask():
     """Run Flask in a separate thread"""
@@ -115,28 +118,34 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Start command handler"""
     user = update.effective_user
     
+    log.info(f"📨 /start from {user.id} - {user.first_name}")
+    
     # Check for referral
     ref_by = None
     if context.args and context.args[0].startswith("ref"):
         try:
             ref_by = int(context.args[0][3:])
+            log.info(f"Referral from: {ref_by}")
         except:
             pass
     
     # Add user to database
-    await db.add_user(
-        user_id=user.id,
-        name=user.first_name,
-        username=user.username,
-        ref_by=ref_by
-    )
+    try:
+        await db.add_user(
+            user_id=user.id,
+            name=user.first_name,
+            username=user.username,
+            ref_by=ref_by
+        )
+    except Exception as e:
+        log.error(f"Error adding user: {e}")
     
     # Check if user has profile
     db_user = await db.get_user(user.id)
     
     if db_user and db_user.get("class_type"):
         # User already has profile, show menu
-        premium = await db.is_premium(user.id)
+        premium = await db.is_premium(user.id) if hasattr(db, 'is_premium') else False
         await update.message.reply_text(
             f"👋 Welcome back, {user.first_name}!\n\nWhat would you like to study today?",
             reply_markup=get_main_keyboard(user.id, premium)
@@ -244,15 +253,18 @@ async def select_goal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     goal = goal_map.get(query.data, "Exam Preparation")
     
     # Save profile to database
-    await db.update_profile(
-        user_id=query.from_user.id,
-        class_type=context.user_data["class_type"],
-        course=context.user_data["subject"],
-        goal=goal
-    )
-    
-    # Give joining bonus
-    await db.add_points(query.from_user.id, 50)
+    try:
+        await db.update_profile(
+            user_id=query.from_user.id,
+            class_type=context.user_data["class_type"],
+            course=context.user_data["subject"],
+            goal=goal
+        )
+        
+        # Give joining bonus
+        await db.add_points(query.from_user.id, 50)
+    except Exception as e:
+        log.error(f"Error saving profile: {e}")
     
     await query.edit_message_text(
         f"🎉 Profile Complete!\n\n"
@@ -261,7 +273,7 @@ async def select_goal(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"🎯 Goal: {goal}\n\n"
         f"✨ You got 50 bonus points!\n\n"
         f"What would you like to do now?",
-        reply_markup=get_main_keyboard(query.from_user.id)
+        reply_markup=get_main_keyboard(query.from_user.id, False)
     )
     return ConversationHandler.END
 
@@ -273,26 +285,13 @@ async def ai_tutor(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     
     user_id = query.from_user.id
-    premium = await db.is_premium(user_id)
-    usage = await db.get_usage(user_id, "ai")
-    limit = 999 if premium else 15
-    
-    if not premium and usage >= limit:
-        await query.edit_message_text(
-            "⚠️ You've reached your daily limit (15 questions).\n\n"
-            "💎 Get Premium for unlimited questions!",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("💎 Get Premium", callback_data="premium")],
-                [InlineKeyboardButton("🔙 Menu", callback_data="menu")]
-            ])
-        )
-        return ConversationHandler.END
+    premium = await db.is_premium(user_id) if hasattr(db, 'is_premium') else False
     
     await query.edit_message_text(
-        "🤖 AI Study Tutor Activated!\n\n"
-        f"💬 Questions left today: {'∞' if premium else limit - usage}\n\n"
+        "🤖 *AI Study Tutor Activated!*\n\n"
         "Ask me anything about your studies. I'll explain like a story so you never forget!\n\n"
         "_Type your question below or send an image_",
+        parse_mode="Markdown",
         reply_markup=get_back_button()
     )
     context.user_data["mode"] = "ai_tutor"
@@ -305,26 +304,10 @@ async def quick_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     
-    user_id = query.from_user.id
-    premium = await db.is_premium(user_id)
-    usage = await db.get_usage(user_id, "q")
-    limit = 999 if premium else 20
-    
-    if not premium and usage >= limit:
-        await query.edit_message_text(
-            "⚠️ Daily limit reached (20 questions).\n\n"
-            "💎 Get Premium for unlimited!",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("💎 Premium", callback_data="premium")],
-                [InlineKeyboardButton("🔙 Menu", callback_data="menu")]
-            ])
-        )
-        return ConversationHandler.END
-    
     await query.edit_message_text(
-        "❓ Quick Question Mode\n\n"
-        f"Questions left: {'∞' if premium else limit - usage}\n\n"
+        "❓ *Quick Question Mode*\n\n"
         "Type your question and I'll give a quick answer!",
+        parse_mode="Markdown",
         reply_markup=get_back_button()
     )
     context.user_data["mode"] = "quick"
@@ -337,29 +320,35 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     text = update.message.text
     
-    # Check if user is blocked
-    if await db.is_blocked(user_id):
-        await update.message.reply_text("❌ You are blocked from using this bot.")
-        return ConversationHandler.END
+    log.info(f"📝 Message from {user_id}: {text[:50]}...")
+    
+    # Send typing indicator
+    await context.bot.send_chat_action(chat_id=user_id, action="typing")
     
     mode = context.user_data.get("mode", "quick")
     
-    # Handle different modes
-    if mode == "ai_tutor" or mode == "quick":
-        # Get answer from AI
-        wait_msg = await update.message.reply_text("🤔 Thinking...")
-        
+    # Handle feedback mode
+    if mode == "wait_feedback":
+        try:
+            await db.save_feedback(user_id, 5, text)
+        except:
+            pass
+        await update.message.reply_text(
+            "✅ Thank you for your feedback!",
+            reply_markup=get_main_keyboard(user_id, False)
+        )
+        context.user_data["mode"] = None
+        return ConversationHandler.END
+    
+    # Get answer from AI
+    wait_msg = await update.message.reply_text("🤔 Thinking...")
+    
+    try:
         # Get user data for context
         user_data = await db.get_user(user_id)
         
         # Get answer
         answer, provider = await ask_ai(text, user_data, mode)
-        
-        # Track usage
-        await db.inc_usage(user_id, "ai" if mode == "ai_tutor" else "q")
-        
-        # Save to history
-        await db.save_q(user_id, text, answer, provider)
         
         await wait_msg.delete()
         
@@ -381,15 +370,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["last_answer"] = answer
         context.user_data["last_question"] = text
         
-    elif mode == "wait_feedback":
-        # Save feedback
-        await db.save_feedback(user_id, 5, text)  # Rating 5 for text feedback
+        # Try to save to database (don't fail if it doesn't work)
+        try:
+            await db.save_q(user_id, text, answer, provider)
+            await db.inc_usage(user_id, "ai" if mode == "ai_tutor" else "q")
+        except Exception as e:
+            log.debug(f"Could not save to DB: {e}")
+        
+    except Exception as e:
+        log.error(f"AI Error: {e}")
+        await wait_msg.delete()
         await update.message.reply_text(
-            "✅ Thank you for your feedback!",
-            reply_markup=get_main_keyboard(user_id, await db.is_premium(user_id))
+            "❌ Sorry, I encountered an error. Please try again.",
+            reply_markup=get_back_button()
         )
-        context.user_data["mode"] = None
-        return ConversationHandler.END
     
     return mode
 
@@ -398,10 +392,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle photo messages for OCR"""
     user_id = update.effective_user.id
-    
-    if await db.is_blocked(user_id):
-        await update.message.reply_text("❌ You are blocked.")
-        return
     
     wait_msg = await update.message.reply_text("📷 Processing image...")
     
@@ -456,10 +446,6 @@ async def show_updates(update: Update, context: ContextTypes.DEFAULT_TYPE):
     updates = await fetch_updates("all")
     
     keyboard = [
-        [InlineKeyboardButton("💼 Jobs", callback_data="upd_jobs"),
-         InlineKeyboardButton("📋 Forms", callback_data="upd_forms")],
-        [InlineKeyboardButton("📊 Results", callback_data="upd_results"),
-         InlineKeyboardButton("🪪 Admit Cards", callback_data="upd_admit")],
         [InlineKeyboardButton("🔄 Refresh", callback_data="updates"),
          InlineKeyboardButton("🔙 Menu", callback_data="menu")]
     ]
@@ -477,17 +463,10 @@ async def show_news(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await query.edit_message_text("📰 Fetching latest news...")
     
-    # Try to get from cache
-    news = await db.get_cache("news_india")
-    if not news:
-        news = await ask_ai_simple("Latest India news headlines for today. 8 items with brief description.", mode="quick")
-        await db.set_cache("news_india", news, 6)  # Cache for 6 hours
+    # Get news from AI
+    news = await ask_ai_simple("Latest India news headlines for today. 8 items with brief description.", mode="quick")
     
     keyboard = [
-        [InlineKeyboardButton("🏛️ Politics", callback_data="news_pol"),
-         InlineKeyboardButton("🏏 Sports", callback_data="news_sports")],
-        [InlineKeyboardButton("💼 Business", callback_data="news_biz"),
-         InInlineKeyboardButton("📚 Education", callback_data="news_edu")],
         [InlineKeyboardButton("🔄 Refresh", callback_data="news"),
          InlineKeyboardButton("🔙 Menu", callback_data="menu")]
     ]
@@ -506,7 +485,7 @@ async def my_notes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     
     user_id = query.from_user.id
-    notes = await db.get_user_notes(user_id)
+    notes = await db.get_user_notes(user_id) if hasattr(db, 'get_user_notes') else []
     
     if not notes:
         await query.edit_message_text(
@@ -544,7 +523,7 @@ async def view_note(update: Update, context: ContextTypes.DEFAULT_TYPE):
     note_id = query.data.replace("view_note_", "")
     user_id = query.from_user.id
     
-    note = await db.get_note(user_id, note_id)
+    note = await db.get_note(user_id, note_id) if hasattr(db, 'get_note') else None
     if not note:
         await query.edit_message_text("❌ Note not found.", reply_markup=get_back_button())
         return
@@ -552,8 +531,7 @@ async def view_note(update: Update, context: ContextTypes.DEFAULT_TYPE):
     content = note.get("content", "")[:500]
     
     keyboard = [
-        [InlineKeyboardButton("📄 Download PDF", callback_data=f"note_pdf_{note_id}"),
-         InlineKeyboardButton("🗑️ Delete", callback_data=f"del_note_{note_id}")],
+        [InlineKeyboardButton("🗑️ Delete", callback_data=f"del_note_{note_id}")],
         [InlineKeyboardButton("🔙 Back", callback_data="notes")]
     ]
     
@@ -571,7 +549,9 @@ async def delete_note(update: Update, context: ContextTypes.DEFAULT_TYPE):
     note_id = query.data.replace("del_note_", "")
     user_id = query.from_user.id
     
-    await db.delete_note(user_id, note_id)
+    if hasattr(db, 'delete_note'):
+        await db.delete_note(user_id, note_id)
+    
     await query.answer("✅ Note deleted!", show_alert=True)
     
     # Go back to notes list
@@ -585,7 +565,7 @@ async def refer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     
     user_id = query.from_user.id
-    ref_count = await db.get_referral_count(user_id)
+    ref_count = await db.get_referral_count(user_id) if hasattr(db, 'get_referral_count') else 0
     
     ref_link = f"https://t.me/IndiaStudyAI_Bot?start=ref{user_id}"
     
@@ -625,8 +605,7 @@ async def profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text("❌ User not found.", reply_markup=get_back_button())
         return
     
-    premium = await db.is_premium(user_id)
-    rank = await db.get_rank(user_id)
+    premium = await db.is_premium(user_id) if hasattr(db, 'is_premium') else False
     
     text = (
         f"👤 *Your Profile*\n\n"
@@ -634,18 +613,14 @@ async def profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"📖 Subject: {user.get('course', 'Not set')}\n"
         f"🎯 Goal: {user.get('goal', 'Not set')}\n\n"
         f"⭐ Points: *{user.get('points', 0)}*\n"
-        f"🏆 Rank: *#{rank}*\n"
         f"🔥 Streak: *{user.get('streak', 0)} days*\n"
-        f"📊 Max Streak: *{user.get('max_streak', 0)}*\n"
         f"❓ Total Questions: *{user.get('total_questions', 0)}*\n"
         f"👥 Referrals: *{user.get('ref_count', 0)}*\n\n"
-        f"💎 Premium: {'✅ Active' if premium else '❌ Not Active'}\n"
-        f"🏅 Badges: {' '.join(user.get('badges', []))}"
+        f"💎 Premium: {'✅ Active' if premium else '❌ Not Active'}"
     )
     
     keyboard = [
-        [InlineKeyboardButton("📝 My Notes", callback_data="notes"),
-         InlineKeyboardButton("📊 Stats", callback_data="stats")],
+        [InlineKeyboardButton("📝 My Notes", callback_data="notes")],
         [InlineKeyboardButton("🔙 Menu", callback_data="menu")]
     ]
     
@@ -665,16 +640,11 @@ async def settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = query.from_user.id
     user = await db.get_user(user_id)
     
-    lang = user.get("language", "hi")
+    lang = user.get("language", "hi") if user else "hi"
     lang_text = "🇮🇳 Hindi" if lang == "hi" else "🇬🇧 English" if lang == "en" else "🔀 Hinglish"
-    
-    morning = user.get("notify_morning", True)
-    exam_notify = user.get("notify_exam", True)
     
     keyboard = [
         [InlineKeyboardButton(f"🌐 Language: {lang_text}", callback_data="change_lang")],
-        [InlineKeyboardButton(f"🌅 Morning: {'✅ ON' if morning else '❌ OFF'}", callback_data="toggle_morning")],
-        [InlineKeyboardButton(f"📅 Exam: {'✅ ON' if exam_notify else '❌ OFF'}", callback_data="toggle_exam")],
         [InlineKeyboardButton("📝 Edit Profile", callback_data="edit_profile")],
         [InlineKeyboardButton("❓ Help", callback_data="help"),
          InlineKeyboardButton("💬 Feedback", callback_data="feedback")],
@@ -694,12 +664,14 @@ async def change_lang(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     user_id = query.from_user.id
     user = await db.get_user(user_id)
-    current = user.get("language", "hi")
+    current = user.get("language", "hi") if user else "hi"
     
     next_lang = "en" if current == "hi" else "mix" if current == "en" else "hi"
     lang_names = {"hi": "🇮🇳 Hindi", "en": "🇬🇧 English", "mix": "🔀 Hinglish"}
     
-    await db.update_language(user_id, next_lang)
+    if hasattr(db, 'update_language'):
+        await db.update_language(user_id, next_lang)
+    
     await query.answer(f"Language set to {lang_names[next_lang]}", show_alert=True)
     
     # Refresh settings
@@ -713,11 +685,18 @@ async def premium_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     
     user_id = query.from_user.id
-    premium = await db.is_premium(user_id)
+    premium = await db.is_premium(user_id) if hasattr(db, 'is_premium') else False
     
     if premium:
         user = await db.get_user(user_id)
-        expiry = user.get("premium_expiry", "").strftime("%d %b %Y") if user.get("premium_expiry") else "N/A"
+        expiry = user.get("premium_expiry", "")
+        if expiry:
+            try:
+                expiry = expiry.strftime("%d %b %Y")
+            except:
+                expiry = "Active"
+        else:
+            expiry = "Active"
         
         await query.edit_message_text(
             f"💎 *Premium Active*\n\n"
@@ -733,8 +712,7 @@ async def premium_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "💎 *Premium Features*\n\n"
             "✅ Unlimited AI questions\n"
             "✅ Unlimited notes & PDFs\n"
-            "✅ Chat history (30 days)\n"
-            "✅ Priority support\n"
+            "✅ Chat history\n"
             "✅ Advanced study tools\n\n"
             "💰 Price: ₹199/month\n"
             "🎁 FREE: 20 referrals = 1 week premium\n\n"
@@ -742,7 +720,6 @@ async def premium_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Send screenshot after payment.",
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("✅ I've Paid", callback_data="paid")],
                 [InlineKeyboardButton("🎁 Get FREE via Refer", callback_data="refer")],
                 [InlineKeyboardButton("🔙 Menu", callback_data="menu")]
             ])
@@ -770,16 +747,18 @@ async def feedback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle all callbacks"""
     query = update.callback_query
+    await query.answer()
+    
     data = query.data
+    user_id = query.from_user.id
     
     # Handle menu navigation
     if data == "menu":
-        await query.answer()
-        premium = await db.is_premium(query.from_user.id)
+        premium = await db.is_premium(user_id) if hasattr(db, 'is_premium') else False
         await query.edit_message_text(
             "🏠 *Main Menu*\n\nWhat would you like to do?",
             parse_mode="Markdown",
-            reply_markup=get_main_keyboard(query.from_user.id, premium)
+            reply_markup=get_main_keyboard(user_id, premium)
         )
         return ConversationHandler.END
     
@@ -824,11 +803,10 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     elif data == "save_note":
         # Save last answer as note
-        user_id = query.from_user.id
         last_answer = context.user_data.get("last_answer", "")
         last_question = context.user_data.get("last_question", "AI Answer")
         
-        if last_answer:
+        if last_answer and hasattr(db, 'save_note'):
             await db.save_note(user_id, last_question[:50], last_answer, "AI")
             await query.answer("✅ Note saved!", show_alert=True)
         else:
@@ -836,7 +814,6 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     elif data == "download_pdf":
         # Download last answer as PDF
-        user_id = query.from_user.id
         last_answer = context.user_data.get("last_answer", "")
         last_question = context.user_data.get("last_question", "Notes")
         
@@ -858,35 +835,14 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
     
     elif data == "copy_link":
-        ref_link = f"https://t.me/IndiaStudyAI_Bot?start=ref{query.from_user.id}"
+        ref_link = f"https://t.me/IndiaStudyAI_Bot?start=ref{user_id}"
         await query.answer(f"Link copied: {ref_link}", show_alert=True)
-    
-    elif data == "paid":
-        await query.edit_message_text(
-            "📸 Please send a screenshot of your payment.\n\n"
-            "We'll activate premium within 24 hours.",
-            reply_markup=get_back_button()
-        )
-        context.user_data["mode"] = "wait_payment"
-    
-    elif data.startswith("upd_"):
-        # Handle update categories
-        cat = data.replace("upd_", "")
-        await query.answer(f"Loading {cat}...")
-        updates = await fetch_updates(cat)
-        await query.edit_message_text(
-            f"📢 *{cat.upper()} Updates*\n\n{updates}",
-            parse_mode="Markdown",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔄 Refresh", callback_data="updates"),
-                 InlineKeyboardButton("🔙 Menu", callback_data="menu")]
-            ])
-        )
     
     elif data == "mindmap":
         await query.edit_message_text(
             "🗺️ *Mind Map Generator*\n\n"
             "Enter a topic to generate a mind map:",
+            parse_mode="Markdown",
             reply_markup=get_back_button()
         )
         context.user_data["mode"] = "wait_mindmap"
@@ -896,6 +852,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(
             "📝 *Question Paper Generator*\n\n"
             "Enter subject name (e.g., Mathematics, Science, Physics):",
+            parse_mode="Markdown",
             reply_markup=get_back_button()
         )
         context.user_data["mode"] = "wait_qpaper"
@@ -905,6 +862,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(
             "📖 *Vocabulary Builder*\n\n"
             "Enter a topic (e.g., Environment, Technology, Business):",
+            parse_mode="Markdown",
             reply_markup=get_back_button()
         )
         context.user_data["mode"] = "wait_vocab"
@@ -916,10 +874,52 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Enter your subjects (comma separated) and exam date:\n"
             "Format: `Subjects | YYYY-MM-DD | Hours per day`\n\n"
             "Example: `Math, Physics, Chemistry | 2026-04-10 | 5`",
+            parse_mode="Markdown",
             reply_markup=get_back_button()
         )
         context.user_data["mode"] = "wait_planner"
         return WAIT_STUDY_PLAN
+    
+    elif data == "ocr":
+        await query.edit_message_text(
+            "📷 *Image to Text*\n\n"
+            "Send me any image and I'll extract text from it!",
+            parse_mode="Markdown",
+            reply_markup=get_back_button()
+        )
+    
+    elif data == "help":
+        await query.edit_message_text(
+            "❓ *Help*\n\n"
+            "• 🤖 AI Tutor: Ask any study question\n"
+            "• 📢 Updates: Latest sarkari news\n"
+            "• 📝 Notes: Save your study notes\n"
+            "• 📷 OCR: Extract text from images\n"
+            "• 🗺️ Mind Map: Create visual maps\n\n"
+            "More features coming soon!",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔙 Menu", callback_data="menu")]
+            ])
+        )
+    
+    elif data == "edit_profile":
+        # Reset profile
+        await query.edit_message_text(
+            "📝 *Edit Profile*\n\n"
+            "Select your class:",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("📚 Class 1-5", callback_data="class_1_5"),
+                 InlineKeyboardButton("📖 Class 6-8", callback_data="class_6_8")],
+                [InlineKeyboardButton("🎓 Class 9-10", callback_data="class_9_10"),
+                 InlineKeyboardButton("🏫 Class 11-12", callback_data="class_11_12")],
+                [InlineKeyboardButton("🎓 College", callback_data="class_college"),
+                 InlineKeyboardButton("👨‍💼 Job Prep", callback_data="class_job")],
+                [InlineKeyboardButton("🔙 Cancel", callback_data="menu")]
+            ])
+        )
+        return SELECT_CLASS
 
 # ==================== SPECIAL MODE HANDLERS ====================
 
@@ -931,31 +931,22 @@ async def handle_mindmap(update: Update, context: ContextTypes.DEFAULT_TYPE):
     wait_msg = await update.message.reply_text("🗺️ Generating mind map...")
     
     try:
-        # Generate mind map image
-        image_path = await generate_mindmap_image(topic)
-        
-        if image_path and os.path.exists(image_path):
-            with open(image_path, 'rb') as f:
-                await context.bot.send_photo(
-                    chat_id=user_id,
-                    photo=f,
-                    caption=f"🗺️ Mind Map: {topic}",
-                    reply_markup=InlineKeyboardMarkup([
-                        [InlineKeyboardButton("🔙 Menu", callback_data="menu")]
-                    ])
-                )
-        else:
-            # Fallback to text mind map
-            mindmap_text = await ask_ai_simple(f"Create a text mind map for {topic}")
-            await update.message.reply_text(
-                mindmap_text,
-                parse_mode="Markdown",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("🔙 Menu", callback_data="menu")]
-                ])
-            )
+        # Generate text mind map
+        mindmap_text = await generate_mindmap_text(topic)
         
         await wait_msg.delete()
+        
+        await update.message.reply_text(
+            mindmap_text,
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("📝 Save as Note", callback_data="save_note"),
+                 InlineKeyboardButton("🔙 Menu", callback_data="menu")]
+            ])
+        )
+        
+        context.user_data["last_answer"] = mindmap_text
+        context.user_data["last_question"] = f"Mind Map: {topic}"
         
     except Exception as e:
         log.error(f"Mind map error: {e}")
@@ -975,36 +966,34 @@ async def handle_qpaper(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     wait_msg = await update.message.reply_text("📝 Generating question paper...")
     
-    # Get user's class
-    user = await db.get_user(user_id)
-    class_name = user.get("class_type", "Class 10") if user else "Class 10"
-    
-    # Generate paper
-    paper = await generate_question_paper(subject, class_name, "Medium")
-    
-    await wait_msg.delete()
-    
-    # Create PDF
-    pdf_path = await generate_pdf(f"Question Paper - {subject}", paper)
-    
-    if pdf_path and os.path.exists(pdf_path):
-        with open(pdf_path, 'rb') as f:
-            await context.bot.send_document(
-                chat_id=user_id,
-                document=f,
-                filename=f"{subject}_Question_Paper.pdf",
-                caption=f"📝 Question Paper: {subject}",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("🔙 Menu", callback_data="menu")]
-                ])
-            )
-    else:
+    try:
+        # Get user's class
+        user = await db.get_user(user_id)
+        class_name = user.get("class_type", "Class 10") if user else "Class 10"
+        
+        # Generate paper
+        paper = await generate_question_paper(subject, class_name, "Medium")
+        
+        await wait_msg.delete()
+        
         await update.message.reply_text(
             paper,
             parse_mode="Markdown",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔙 Menu", callback_data="menu")]
+                [InlineKeyboardButton("📝 Save as Note", callback_data="save_note"),
+                 InlineKeyboardButton("🔙 Menu", callback_data="menu")]
             ])
+        )
+        
+        context.user_data["last_answer"] = paper
+        context.user_data["last_question"] = f"Question Paper: {subject}"
+        
+    except Exception as e:
+        log.error(f"Question paper error: {e}")
+        await wait_msg.delete()
+        await update.message.reply_text(
+            "❌ Failed to generate question paper. Please try again.",
+            reply_markup=get_back_button()
         )
     
     context.user_data["mode"] = None
@@ -1017,25 +1006,36 @@ async def handle_vocab(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     wait_msg = await update.message.reply_text("📖 Building vocabulary...")
     
-    # Get user's language
-    user = await db.get_user(user_id)
-    lang = user.get("language", "hi") if user else "hi"
+    try:
+        # Get user's language
+        user = await db.get_user(user_id)
+        lang = user.get("language", "hi") if user else "hi"
+        
+        # Generate vocabulary
+        vocab = await build_vocabulary(topic, lang)
+        
+        await wait_msg.delete()
+        
+        await update.message.reply_text(
+            vocab,
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("📝 Save as Note", callback_data="save_note"),
+                 InlineKeyboardButton("🔙 Menu", callback_data="menu")]
+            ])
+        )
+        
+        context.user_data["last_answer"] = vocab
+        context.user_data["last_question"] = f"Vocabulary: {topic}"
+        
+    except Exception as e:
+        log.error(f"Vocabulary error: {e}")
+        await wait_msg.delete()
+        await update.message.reply_text(
+            "❌ Failed to build vocabulary. Please try again.",
+            reply_markup=get_back_button()
+        )
     
-    # Generate vocabulary
-    vocab = await build_vocabulary(topic, lang)
-    
-    await wait_msg.delete()
-    
-    await update.message.reply_text(
-        vocab,
-        parse_mode="Markdown",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("📝 Save as Note", callback_data="save_note"),
-             InlineKeyboardButton("🔙 Menu", callback_data="menu")]
-        ])
-    )
-    
-    context.user_data["last_answer"] = vocab
     context.user_data["mode"] = None
     return ConversationHandler.END
 
@@ -1063,31 +1063,17 @@ async def handle_planner(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         await wait_msg.delete()
         
-        # Save plan
-        await db.save_study_plan(user_id, plan, exam_date, subjects)
+        await update.message.reply_text(
+            plan,
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("📝 Save as Note", callback_data="save_note"),
+                 InlineKeyboardButton("🔙 Menu", callback_data="menu")]
+            ])
+        )
         
-        # Create PDF
-        pdf_path = await generate_pdf("Study Plan", plan)
-        
-        if pdf_path and os.path.exists(pdf_path):
-            with open(pdf_path, 'rb') as f:
-                await context.bot.send_document(
-                    chat_id=user_id,
-                    document=f,
-                    filename="Study_Plan.pdf",
-                    caption="📊 Your Personalized Study Plan",
-                    reply_markup=InlineKeyboardMarkup([
-                        [InlineKeyboardButton("🔙 Menu", callback_data="menu")]
-                    ])
-                )
-        else:
-            await update.message.reply_text(
-                plan,
-                parse_mode="Markdown",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("🔙 Menu", callback_data="menu")]
-                ])
-            )
+        context.user_data["last_answer"] = plan
+        context.user_data["last_question"] = f"Study Plan: {subjects}"
         
     except Exception as e:
         log.error(f"Planner error: {e}")
@@ -1101,49 +1087,11 @@ async def handle_planner(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ==================== SCHEDULED JOBS ====================
 
-async def send_morning_messages(app):
-    """Send morning messages to users"""
-    users = await db.morning_notify_users()
-    sent = 0
-    
-    for user in users:
-        try:
-            user_id = user["user_id"]
-            name = user.get("name", "Student")
-            streak = user.get("streak", 0)
-            
-            # Get quote of the day
-            quote = await ask_ai_simple("Give a short motivational quote in Hindi for students", mode="quick")
-            
-            message = (
-                f"🌅 *Good Morning, {name}!*\n\n"
-                f"{quote}\n\n"
-                f"🔥 Current Streak: *{streak} days*\n\n"
-                f"Today's Goals:\n"
-                f"• Study at least 2 hours\n"
-                f"• Complete daily challenge\n"
-                f"• Review yesterday's topics\n\n"
-                f"✨ Make today count!"
-            )
-            
-            await app.bot.send_message(
-                chat_id=user_id,
-                text=message,
-                parse_mode="Markdown",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("🎯 Daily Challenge", callback_data="challenge"),
-                     InlineKeyboardButton("📚 Start Studying", callback_data="ai_tutor")]
-                ])
-            )
-            sent += 1
-            
-        except Exception as e:
-            log.error(f"Morning message error for {user_id}: {e}")
-    
-    log.info(f"Morning messages sent: {sent}")
-
 async def check_reminders(app):
     """Check and send due reminders"""
+    if not hasattr(db, 'get_due_reminders'):
+        return
+    
     reminders = await db.get_due_reminders()
     
     for reminder in reminders:
@@ -1154,130 +1102,61 @@ async def check_reminders(app):
                 parse_mode="Markdown"
             )
             await db.mark_reminder_sent(str(reminder["_id"]))
-            
         except Exception as e:
             log.error(f"Reminder error: {e}")
-
-async def check_exam_reminders(app):
-    """Check and send exam reminders"""
-    reminders = await db.get_exam_reminders()
-    
-    for rem in reminders:
-        try:
-            days = rem["days_left"]
-            if days == 1:
-                msg = f"⚠️ *TOMORROW* is your {rem['exam_name']} exam! Best of luck! 🍀"
-            elif days == 7:
-                msg = f"📅 *7 days left* for {rem['exam_name']} exam. Start revision! 📚"
-            elif days == 30:
-                msg = f"📅 *30 days left* for {rem['exam_name']} exam. Make a study plan!"
-            else:
-                msg = f"📅 {rem['days_left']} days left for {rem['exam_name']} exam."
-            
-            await app.bot.send_message(
-                chat_id=rem["user_id"],
-                text=msg,
-                parse_mode="Markdown"
-            )
-            
-        except Exception as e:
-            log.error(f"Exam reminder error: {e}")
 
 # ==================== ADMIN COMMANDS ====================
 
 async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Admin: Show bot statistics"""
     if update.effective_user.id != OWNER_ID:
+        await update.message.reply_text("❌ Unauthorized")
         return
     
-    stats = await db.stats()
+    stats = await db.stats() if hasattr(db, 'stats') else {"total": 0, "active_today": 0}
     
     text = (
         f"📊 *Bot Statistics*\n\n"
-        f"👥 Total Users: *{stats['total']}*\n"
-        f"✅ Active Today: *{stats['active_today']}*\n"
-        f"🆕 New Today: *{stats['new_today']}*\n"
-        f"💎 Premium Users: *{stats['premium']}*\n"
-        f"🚫 Blocked: *{stats['blocked']}*\n"
-        f"❓ Total Questions: *{stats['questions']}*\n"
-        f"📝 Total Notes: *{stats['notes_total']}*"
+        f"👥 Total Users: *{stats.get('total', 0)}*\n"
+        f"✅ Active Today: *{stats.get('active_today', 0)}*\n"
+        f"💎 Premium: *{stats.get('premium', 0)}*\n"
+        f"📝 Notes: *{stats.get('notes_total', 0)}*"
     )
     
     await update.message.reply_text(text, parse_mode="Markdown")
 
-async def admin_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Admin: Broadcast message to all users"""
-    if update.effective_user.id != OWNER_ID:
-        return
-    
-    if not context.args:
-        await update.message.reply_text("Usage: /broadcast <message>")
-        return
-    
-    message = " ".join(context.args)
-    
-    # Get all users
-    users = await db.users.find({}).to_list(length=None)
-    
-    sent = 0
-    failed = 0
-    
-    status_msg = await update.message.reply_text(f"📢 Broadcasting... 0/{len(users)}")
-    
-    for i, user in enumerate(users):
-        try:
-            await context.bot.send_message(
-                chat_id=user["user_id"],
-                text=f"📢 *Broadcast Message*\n\n{message}",
-                parse_mode="Markdown"
-            )
-            sent += 1
-        except:
-            failed += 1
-        
-        if (i + 1) % 10 == 0:
-            await status_msg.edit_text(f"📢 Broadcasting... {i+1}/{len(users)}")
-    
-    await status_msg.edit_text(
-        f"✅ Broadcast complete!\n"
-        f"Sent: {sent}\n"
-        f"Failed: {failed}"
-    )
-
-async def admin_add_premium(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Admin: Add premium to user"""
-    if update.effective_user.id != OWNER_ID:
-        return
-    
-    try:
-        user_id = int(context.args[0])
-        days = int(context.args[1]) if len(context.args) > 1 else 30
-        
-        await db.set_premium(user_id, days)
-        
-        await update.message.reply_text(f"✅ Premium added to {user_id} for {days} days")
-        
-        # Notify user
-        try:
-            await context.bot.send_message(
-                chat_id=user_id,
-                text=f"🎉 *Premium Activated!*\n\nYour premium is active for {days} days. Enjoy unlimited access!",
-                parse_mode="Markdown"
-            )
-        except:
-            pass
-            
-    except Exception as e:
-        await update.message.reply_text(f"❌ Error: {e}")
-
 # ==================== MAIN FUNCTION ====================
+
+async def post_init(application):
+    """Initialize after bot starts"""
+    # Connect to database
+    await db.connect()
+    
+    # Log bot info
+    bot_info = await application.bot.get_me()
+    log.info(f"✅ Bot started: @{bot_info.username}")
+    log.info(f"✅ Database connected: {db.is_connected() if hasattr(db, 'is_connected') else False}")
+    log.info(f"✅ Mini App URL: {MINI_APP_URL}/app")
 
 def main():
     """Start the bot"""
-    global app
+    log.info("🚀 Starting IndiaStudyAI Bot...")
     
     # Start Flask in separate thread
-    threading.Thread(target=run_flask, daemon=True).start()
+    flask_thread = threading.Thread(target=run_flask, daemon=True)
+    flask_thread.start()
+    log.info(f"✅ Flask server started on port {PORT}")
+    
+    # CRITICAL FIX: Stop any existing bot instances
+    try:
+        log.info("🔄 Cleaning up previous bot instances...")
+        requests.post(
+            f"https://api.telegram.org/bot{TOKEN}/deleteWebhook",
+            json={"drop_pending_updates": True}
+        )
+        log.info("✅ Webhook deleted, pending updates dropped")
+    except Exception as e:
+        log.warning(f"Could not delete webhook: {e}")
     
     # Create application
     app = Application.builder().token(TOKEN).build()
@@ -1309,35 +1188,21 @@ def main():
     
     # Admin commands
     app.add_handler(CommandHandler("stats", admin_stats))
-    app.add_handler(CommandHandler("broadcast", admin_broadcast))
-    app.add_handler(CommandHandler("addpremium", admin_add_premium))
     
     # Setup scheduler
     scheduler = AsyncIOScheduler(timezone="Asia/Kolkata")
-    scheduler.add_job(send_morning_messages, "cron", hour=7, minute=0, args=[app])
     scheduler.add_job(check_reminders, "interval", minutes=5, args=[app])
-    scheduler.add_job(check_exam_reminders, "cron", hour=9, minute=0, args=[app])
     scheduler.start()
     
-    # Connect to database on startup
-    async def post_init(application):
-        await db.connect()
-        log.info("✅ Bot started!")
-    
+    # Set post-init
     app.post_init = post_init
     
-    # Start bot
-    if WEBHOOK_URL:
-        # Use webhook
-        app.run_webhook(
-            listen="0.0.0.0",
-            port=PORT,
-            url_path=TOKEN,
-            webhook_url=f"{WEBHOOK_URL}/{TOKEN}"
-        )
-    else:
-        # Use polling
-        app.run_polling()
+    # Start bot with proper settings to avoid conflict
+    log.info("📡 Starting bot in polling mode...")
+    app.run_polling(
+        drop_pending_updates=True,  # CRITICAL: This fixes the conflict error
+        allowed_updates=Update.ALL_TYPES
+    )
 
 if __name__ == "__main__":
     main()
