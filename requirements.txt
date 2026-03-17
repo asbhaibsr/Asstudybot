@@ -1,7 +1,8 @@
-# Telegram Bot
+# Core
 python-telegram-bot==20.7
+python-dotenv==1.0.0
 
-# Web server
+# Web
 flask==3.0.0
 gunicorn==21.2.0
 
@@ -9,28 +10,29 @@ gunicorn==21.2.0
 motor==3.3.2
 pymongo==4.6.1
 
-# HTTP client
+# HTTP
 httpx==0.25.2
+aiohttp==3.9.1
 
-# Scheduler
-APScheduler==3.10.4
+# AI & ML
+g4f==0.2.2.2
+duckduckgo-search==5.3.1
+transformers==4.36.2
+torch==2.1.2
 
-# News / RSS
+# PDF & Images
+reportlab==4.1.0
+Pillow==10.2.0
+
+# News & Scraping
 feedparser==6.0.11
 beautifulsoup4==4.12.3
 lxml==5.1.0
 
-# PDF Generation (Unicode support)
-reportlab==4.1.0
-
-# Image processing (optional - Koyeb pe tesseract nahi hota)
-Pillow==10.2.0
-# pytesseract==0.3.10  # Only if tesseract binary available
-
-# Free AI libraries
-g4f==0.2.1.2
-duckduckgo-search==5.3.1
+# Scheduling
+APScheduler==3.10.4
 
 # Utilities
 python-dateutil==2.8.2
 pytz==2024.1
+requests==2.31.0
