@@ -1,740 +1,860 @@
-import asyncio
-import httpx
-import logging
-import random
+from motor.motor_asyncio import AsyncIOMotorClient
 import os
-import base64
-import json
-import re
-from datetime import datetime
-from typing import Optional, Dict, List, Tuple
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.lib.pagesizes import A4, letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib import colors
-from reportlab.lib.units import inch
-import io
-from PIL import Image, ImageDraw, ImageFont
+import datetime
+from bson import ObjectId
+from typing import Optional, List, Dict, Any
+import logging
 
 log = logging.getLogger(__name__)
 
-# API Keys
-GEMINI_KEY = os.environ.get("GEMINI_API_KEY", "")
-GROQ_KEY = os.environ.get("GROQ_API_KEY", "")
-MISTRAL_KEY = os.environ.get("MISTRAL_API_KEY", "")
-DEEPSEEK_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
-CLAUDE_KEY = os.environ.get("CLAUDE_API_KEY", "")
-OPENROUTER_KEY = os.environ.get("OPENROUTER_API_KEY", "")
-
-# Font Setup (Hindi Support) - Using smaller, reliable fonts
-FONT_URLS = {
-    "hindi": "https://github.com/notofonts/noto-fonts/raw/main/hinted/ttf/NotoSansDevanagari/NotoSansDevanagari-Regular.ttf",
-    "fallback": "https://github.com/notofonts/noto-fonts/raw/main/hinted/ttf/NotoSans/NotoSans-Regular.ttf"
-}
-FONT_PATHS = {
-    "hindi": "/tmp/NotoSansDevanagari-Regular.ttf",
-    "fallback": "/tmp/NotoSans-Regular.ttf"
-}
-
-async def download_fonts():
-    """Download Hindi fonts for PDF generation"""
-    async with httpx.AsyncClient(timeout=30) as client:
-        for name, url in FONT_URLS.items():
-            if not os.path.exists(FONT_PATHS[name]):
-                try:
-                    log.info(f"Downloading font: {name}")
-                    r = await client.get(url)
-                    with open(FONT_PATHS[name], "wb") as f:
-                        f.write(r.content)
-                    pdfmetrics.registerFont(TTFont(name.capitalize() + 'Font', FONT_PATHS[name]))
-                    log.info(f"✅ Font registered: {name}")
-                except Exception as e:
-                    log.error(f"Font download failed for {name}: {e}")
-                    return False
-    return True
-
-# ==================== AI RACE MODE ====================
-# Multiple AI providers running in parallel - fastest wins
-
-class AIRacer:
+class Database:
     def __init__(self):
-        self.providers = []
-        self.timeout = 15  # seconds
-        
-        # Add all available providers with keys
-        if GEMINI_KEY:
-            self.providers.append(("gemini", self._gemini))
-        if GROQ_KEY:
-            self.providers.append(("groq", self._groq))
-        if MISTRAL_KEY:
-            self.providers.append(("mistral", self._mistral))
-        if DEEPSEEK_KEY:
-            self.providers.append(("deepseek", self._deepseek))
-        if CLAUDE_KEY:
-            self.providers.append(("claude", self._claude))
-        if OPENROUTER_KEY:
-            self.providers.append(("openrouter", self._openrouter))
-        
-        # Free providers (no key needed)
-        self.providers.append(("pollinations", self._pollinations))
-        # g4f commented out because it requires additional libraries
-        # self.providers.append(("g4f", self._g4f))
-        
-        log.info(f"🚀 AI Racer initialized with {len(self.providers)} providers")
+        self.client = None
+        self.db = None
+        self.users = None
+        self.questions = None
+        self.notes = None
+        self.reminders = None
+        self.referrals = None
+        self.feedback = None
+        self.cache = None
     
-    async def _gemini(self, system: str, user: str) -> Optional[str]:
-        """Google Gemini AI"""
+    async def connect(self):
+        """Connect to MongoDB"""
+        mongo_url = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
         try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_KEY}"
-            payload = {
-                "contents": [{
-                    "parts": [{"text": f"{system}\n\n{user}"}]
-                }],
-                "generationConfig": {
-                    "temperature": 0.7,
-                    "maxOutputTokens": 1500
+            self.client = AsyncIOMotorClient(mongo_url)
+            self.db = self.client["IndiaStudyAI"]
+            self.users = self.db["users"]
+            self.questions = self.db["questions"]
+            self.notes = self.db["notes"]
+            self.reminders = self.db["reminders"]
+            self.referrals = self.db["referrals"]
+            self.feedback = self.db["feedback"]
+            self.cache = self.db["cache"]
+            
+            # Create indexes
+            await self.users.create_index("user_id", unique=True)
+            await self.questions.create_index([("user_id", 1), ("timestamp", -1)])
+            await self.notes.create_index([("user_id", 1), ("timestamp", -1)])
+            await self.reminders.create_index("remind_at")
+            await self.cache.create_index("key", unique=True)
+            
+            log.info("✅ Database connected successfully")
+            return True
+        except Exception as e:
+            log.error(f"❌ Database connection failed: {e}")
+            return False
+    
+    # ==================== USER MANAGEMENT ====================
+    
+    async def add_user(self, user_id: int, name: str, username: str = None, ref_by: int = None):
+        """Add new user to database"""
+        try:
+            user = await self.users.find_one({"user_id": user_id})
+            
+            if not user:
+                # New user
+                user_data = {
+                    "user_id": user_id,
+                    "name": name,
+                    "username": username,
+                    "joined": datetime.datetime.now(),
+                    "last_active": datetime.datetime.now(),
+                    "points": 50,  # Joining bonus
+                    "streak": 0,
+                    "max_streak": 0,
+                    "total_questions": 0,
+                    "language": "hi",
+                    "premium": False,
+                    "premium_expiry": None,
+                    "class_type": None,
+                    "course": None,
+                    "goal": None,
+                    "exam_name": None,
+                    "exam_date": None,
+                    "notify_morning": True,
+                    "notify_exam": True,
+                    "ref_count": 0,
+                    "ref_earned": 0,
+                    "badges": ["🌱 Newbie"],
+                    "blocked": False,
+                    "usage": {},
+                    "api_usage": {}
                 }
-            }
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                r = await client.post(url, json=payload)
-                if r.status_code == 200:
-                    data = r.json()
-                    return data["candidates"][0]["content"]["parts"][0]["text"]
-                else:
-                    log.debug(f"Gemini error status: {r.status_code}")
+                await self.users.insert_one(user_data)
+                log.info(f"✅ New user added: {user_id} - {name}")
+                
+                # Handle referral
+                if ref_by and ref_by != user_id:
+                    await self.add_referral(ref_by, user_id)
+                return True
+            return False
         except Exception as e:
-            log.debug(f"Gemini error: {e}")
-        return None
+            log.error(f"Error adding user: {e}")
+            return False
     
-    async def _groq(self, system: str, user: str) -> Optional[str]:
-        """Groq (Llama 3) - Very Fast"""
+    async def get_user(self, user_id: int) -> Optional[Dict]:
+        """Get user by ID"""
         try:
-            url = "https://api.groq.com/openai/v1/chat/completions"
-            headers = {
-                "Authorization": f"Bearer {GROQ_KEY}",
-                "Content-Type": "application/json"
-            }
-            payload = {
-                "model": "llama3-8b-8192",
-                "messages": [
-                    {"role": "system", "content": system[:1500]},
-                    {"role": "user", "content": user[:2000]}
-                ],
-                "temperature": 0.7,
-                "max_tokens": 1000
-            }
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                r = await client.post(url, json=payload, headers=headers)
-                if r.status_code == 200:
-                    return r.json()["choices"][0]["message"]["content"]
+            return await self.users.find_one({"user_id": user_id})
         except Exception as e:
-            log.debug(f"Groq error: {e}")
-        return None
-    
-    async def _mistral(self, system: str, user: str) -> Optional[str]:
-        """Mistral AI"""
-        if not MISTRAL_KEY:
+            log.error(f"Error getting user: {e}")
             return None
+    
+    async def update_profile(self, user_id: int, class_type: str, course: str, goal: str):
+        """Update user profile"""
         try:
-            url = "https://api.mistral.ai/v1/chat/completions"
-            headers = {
-                "Authorization": f"Bearer {MISTRAL_KEY}",
-                "Content-Type": "application/json"
-            }
-            payload = {
-                "model": "mistral-small-latest",
-                "messages": [
-                    {"role": "system", "content": system[:1500]},
-                    {"role": "user", "content": user[:2000]}
-                ],
-                "max_tokens": 1000
-            }
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                r = await client.post(url, json=payload, headers=headers)
-                if r.status_code == 200:
-                    return r.json()["choices"][0]["message"]["content"]
+            await self.users.update_one(
+                {"user_id": user_id},
+                {"$set": {
+                    "class_type": class_type,
+                    "course": course,
+                    "goal": goal,
+                    "last_active": datetime.datetime.now()
+                }}
+            )
+            return True
         except Exception as e:
-            log.debug(f"Mistral error: {e}")
-        return None
+            log.error(f"Error updating profile: {e}")
+            return False
     
-    async def _deepseek(self, system: str, user: str) -> Optional[str]:
-        """DeepSeek AI"""
-        if not DEEPSEEK_KEY:
-            return None
+    async def update_language(self, user_id: int, language: str):
+        """Update user language preference"""
         try:
-            url = "https://api.deepseek.com/v1/chat/completions"
-            headers = {
-                "Authorization": f"Bearer {DEEPSEEK_KEY}",
-                "Content-Type": "application/json"
-            }
-            payload = {
-                "model": "deepseek-chat",
-                "messages": [
-                    {"role": "system", "content": system[:1500]},
-                    {"role": "user", "content": user[:2000]}
-                ],
-                "max_tokens": 1000
-            }
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                r = await client.post(url, json=payload, headers=headers)
-                if r.status_code == 200:
-                    return r.json()["choices"][0]["message"]["content"]
+            await self.users.update_one(
+                {"user_id": user_id},
+                {"$set": {"language": language}}
+            )
+            return True
         except Exception as e:
-            log.debug(f"DeepSeek error: {e}")
-        return None
+            log.error(f"Error updating language: {e}")
+            return False
     
-    async def _claude(self, system: str, user: str) -> Optional[str]:
-        """Claude AI (Anthropic)"""
-        if not CLAUDE_KEY:
-            return None
+    async def update_settings(self, user_id: int, **kwargs):
+        """Update user settings"""
         try:
-            url = "https://api.anthropic.com/v1/messages"
-            headers = {
-                "x-api-key": CLAUDE_KEY,
-                "anthropic-version": "2023-06-01",
-                "Content-Type": "application/json"
-            }
-            payload = {
-                "model": "claude-3-haiku-20240307",
-                "max_tokens": 1000,
-                "system": system[:1500],
-                "messages": [{"role": "user", "content": user[:2000]}]
-            }
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                r = await client.post(url, json=payload, headers=headers)
-                if r.status_code == 200:
-                    return r.json()["content"][0]["text"]
+            await self.users.update_one(
+                {"user_id": user_id},
+                {"$set": kwargs}
+            )
+            return True
         except Exception as e:
-            log.debug(f"Claude error: {e}")
-        return None
+            log.error(f"Error updating settings: {e}")
+            return False
     
-    async def _openrouter(self, system: str, user: str) -> Optional[str]:
-        """OpenRouter (Multiple models)"""
-        if not OPENROUTER_KEY:
-            return None
+    async def is_blocked(self, user_id: int) -> bool:
+        """Check if user is blocked"""
         try:
-            url = "https://openrouter.ai/api/v1/chat/completions"
-            headers = {
-                "Authorization": f"Bearer {OPENROUTER_KEY}",
-                "Content-Type": "application/json",
-                "HTTP-Referer": "https://t.me/IndiaStudyAI_Bot",
-                "X-Title": "IndiaStudyAI"
-            }
-            payload = {
-                "model": "mistralai/mixtral-8x7b-instruct",
-                "messages": [
-                    {"role": "system", "content": system[:1500]},
-                    {"role": "user", "content": user[:2000]}
-                ],
-                "max_tokens": 1000
-            }
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                r = await client.post(url, json=payload, headers=headers)
-                if r.status_code == 200:
-                    return r.json()["choices"][0]["message"]["content"]
-        except Exception as e:
-            log.debug(f"OpenRouter error: {e}")
-        return None
-    
-    async def _pollinations(self, system: str, user: str) -> Optional[str]:
-        """Pollinations AI (Free) - Fast and reliable"""
-        try:
-            # Using GET method for faster response
-            prompt = f"{system}\n\n{user}"[:1000]
-            url = f"https://text.pollinations.ai/{prompt.replace(' ', '%20')}"
-            async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
-                r = await client.get(url)
-                if r.status_code == 200 and len(r.text) > 20:
-                    return r.text.strip()
-        except Exception as e:
-            log.debug(f"Pollinations error: {e}")
-            
-        # Fallback to POST method
-        try:
-            url = "https://text.pollinations.ai/openai"
-            payload = {
-                "messages": [
-                    {"role": "system", "content": system[:1000]},
-                    {"role": "user", "content": user[:1500]}
-                ],
-                "private": True,
-                "seed": random.randint(1, 9999)
-            }
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                r = await client.post(url, json=payload)
-                if r.status_code == 200:
-                    data = r.json()
-                    return data["choices"][0]["message"]["content"]
-        except Exception as e:
-            log.debug(f"Pollinations POST error: {e}")
-        return None
-    
-    async def race(self, system: str, user: str) -> Tuple[Optional[str], str]:
-        """
-        Run all providers in parallel, return fastest response
-        Returns: (answer, provider_name)
-        """
-        if not self.providers:
-            log.error("No AI providers available")
-            return None, "none"
-        
-        tasks = []
-        provider_names = []
-        
-        for name, provider_func in self.providers:
-            tasks.append(provider_func(system, user))
-            provider_names.append(name)
-        
-        # Run all tasks concurrently
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        
-        # Find first valid response
-        for i, result in enumerate(results):
-            if isinstance(result, str) and result and len(result) > 15:
-                # Clean the response - remove any you.com links
-                result = re.sub(r'https?://(?:www\.)?you\.com[^\s]*', '', result)
-                result = re.sub(r'you\.com/pricing', '', result, flags=re.IGNORECASE)
-                return result.strip(), provider_names[i]
-        
-        return None, "none"
-
-# Create global racer instance
-ai_racer = AIRacer()
-
-async def ask_ai(question: str, user_data: dict = None, mode: str = "study") -> Tuple[str, str]:
-    """
-    Main AI function with race mode
-    Returns: (answer, provider_name)
-    """
-    lang = user_data.get("language", "hi") if user_data else "hi"
-    
-    # Get class and subject if available
-    class_type = user_data.get("class_type", "") if user_data else ""
-    subject = user_data.get("course", "") if user_data else ""
-    
-    # System prompts based on mode and language - optimized for speed
-    if mode == "study":
-        if lang == "hi":
-            system = (f"आप एक भारतीय शिक्षा AI हैं। उत्तर हिंदी में दें। "
-                     f"कक्षा: {class_type}, विषय: {subject}. "
-                     f"सरल भाषा में समझाएं। उदाहरण दें। बाहरी लिंक न दें।")
-        elif lang == "en":
-            system = (f"You are an Indian education AI. Answer in English. "
-                     f"Class: {class_type}, Subject: {subject}. "
-                     f"Explain simply with examples. No external links.")
-        else:  # mix / hinglish
-            system = (f"Indian study AI. Answer in Hinglish (Hindi+English mix). "
-                     f"Class: {class_type}, Subject: {subject}. "
-                     f"Simple explanation with examples. No external links.")
-    
-    elif mode == "quick":
-        if lang == "hi":
-            system = "संक्षिप्त उत्तर हिंदी में दें। बाहरी लिंक न दें।"
-        elif lang == "en":
-            system = "Give concise answer in English. No external links."
-        else:
-            system = "Give quick answer in Hinglish. No external links."
-    
-    elif mode == "mindmap":
-        if lang == "hi":
-            system = "माइंड मैप टेक्स्ट बनाएं। केंद्र में विषय, 5-6 शाखाएं।"
-        else:
-            system = "Create text mind map. Center topic, 5-6 branches with sub-points."
-    
-    else:
-        system = "Answer the question helpfully. No external links."
-    
-    # Add instruction to avoid you.com
-    system += " DO NOT mention you.com or any pricing links."
-    
-    # Race all AIs
-    answer, provider = await ai_racer.race(system, question)
-    
-    if answer:
-        # Final cleanup of any remaining you.com links
-        answer = re.sub(r'https?://(?:www\.)?you\.com[^\s]*', '', answer)
-        answer = re.sub(r'you\.com/pricing', '', answer, flags=re.IGNORECASE)
-        return answer, provider
-    else:
-        return "⚠️ सभी AI सेवाएं व्यस्त हैं। कृपया थोड़ी देर बाद प्रयास करें।", "none"
-
-async def ask_ai_simple(question: str, user_data: dict = None, mode: str = "study") -> str:
-    """Simple version that returns only answer"""
-    answer, _ = await ask_ai(question, user_data, mode)
-    return answer
-
-# ==================== PDF GENERATION ====================
-
-async def generate_pdf(title: str, content: str, filename: str = "notes.pdf") -> str:
-    """Generate PDF with Hindi font support"""
-    try:
-        # Download fonts first
-        await download_fonts()
-        
-        path = f"/tmp/{filename}"
-        doc = SimpleDocTemplate(path, pagesize=A4)
-        styles = getSampleStyleSheet()
-        
-        # Create custom styles with Hindi font
-        try:
-            # Try to register Hindi font
-            pdfmetrics.registerFont(TTFont('HindiFont', FONT_PATHS["hindi"]))
-            font_name = 'HindiFont'
+            user = await self.get_user(user_id)
+            return user.get("blocked", False) if user else False
         except:
-            try:
-                # Fallback to regular font
-                pdfmetrics.registerFont(TTFont('FallbackFont', FONT_PATHS["fallback"]))
-                font_name = 'FallbackFont'
-            except:
-                font_name = 'Helvetica'
-        
-        title_style = ParagraphStyle(
-            'CustomTitle',
-            parent=styles['Title'],
-            fontName=font_name,
-            fontSize=18,
-            textColor=colors.HexColor('#7c3aed'),
-            alignment=1,  # Center
-            spaceAfter=12
-        )
-        
-        normal_style = ParagraphStyle(
-            'CustomNormal',
-            parent=styles['Normal'],
-            fontName=font_name,
-            fontSize=11,
-            leading=16,
-            spaceAfter=6
-        )
-        
-        heading_style = ParagraphStyle(
-            'CustomHeading',
-            parent=styles['Heading2'],
-            fontName=font_name,
-            fontSize=14,
-            textColor=colors.HexColor('#4a1d96'),
-            spaceBefore=10,
-            spaceAfter=6
-        )
-        
-        story = []
-        
-        # Title
-        story.append(Paragraph(f"<b>{title}</b>", title_style))
-        story.append(Spacer(1, 8))
-        
-        # Date
-        date_style = ParagraphStyle(
-            'DateStyle',
-            parent=normal_style,
-            fontSize=9,
-            textColor=colors.grey,
-            alignment=1
-        )
-        story.append(Paragraph(f"📅 {datetime.now().strftime('%d %B %Y')}", date_style))
-        story.append(Spacer(1, 16))
-        
-        # Process content - remove markdown stars but keep structure
-        lines = content.split('\n')
-        for line in lines:
-            line = line.strip()
-            if not line:
-                story.append(Spacer(1, 4))
-                continue
-            
-            # Remove markdown formatting
-            clean_line = re.sub(r'\*\*(.*?)\*\*', r'\1', line)  # Bold
-            clean_line = re.sub(r'\*(.*?)\*', r'\1', clean_line)  # Italic
-            clean_line = re.sub(r'`(.*?)`', r'\1', clean_line)  # Code
-            clean_line = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', clean_line)  # Links
-            
-            # Check if it's a heading
-            if line.startswith('# '):
-                story.append(Paragraph(clean_line[2:], heading_style))
-            elif line.startswith('## ') or line.startswith('### '):
-                story.append(Paragraph(clean_line[3:], heading_style))
-            elif line.startswith('- ') or line.startswith('• ') or line.startswith('* '):
-                # Bullet points
-                story.append(Paragraph(f"• {clean_line[2:]}", normal_style))
-            elif re.match(r'^\d+\.', line):
-                # Numbered list
-                story.append(Paragraph(clean_line, normal_style))
-            else:
-                # Normal text
-                try:
-                    story.append(Paragraph(clean_line, normal_style))
-                except:
-                    # If still failing, use ascii only
-                    safe_line = clean_line.encode('ascii', 'ignore').decode()
-                    story.append(Paragraph(safe_line, normal_style))
-        
-        # Footer
-        story.append(Spacer(1, 24))
-        footer_style = ParagraphStyle(
-            'Footer',
-            parent=normal_style,
-            fontSize=8,
-            textColor=colors.grey,
-            alignment=1
-        )
-        story.append(Paragraph("Generated by IndiaStudyAI Bot", footer_style))
-        
-        # Build PDF
-        doc.build(story)
-        return path
-        
-    except Exception as e:
-        log.error(f"PDF generation failed: {e}")
-        # Fallback to text file
+            return False
+    
+    async def block_user(self, user_id: int):
+        """Block a user"""
         try:
-            text_path = f"/tmp/{filename.replace('.pdf', '.txt')}"
-            with open(text_path, 'w', encoding='utf-8') as f:
-                f.write(f"{title}\n")
-                f.write("="*50 + "\n\n")
-                # Remove markdown
-                clean = re.sub(r'[*#`\[\]()]', '', content)
-                f.write(clean)
-            return text_path
+            await self.users.update_one(
+                {"user_id": user_id},
+                {"$set": {"blocked": True}}
+            )
+            return True
+        except Exception as e:
+            log.error(f"Error blocking user: {e}")
+            return False
+    
+    async def unblock_user(self, user_id: int):
+        """Unblock a user"""
+        try:
+            await self.users.update_one(
+                {"user_id": user_id},
+                {"$set": {"blocked": False}}
+            )
+            return True
+        except Exception as e:
+            log.error(f"Error unblocking user: {e}")
+            return False
+    
+    # ==================== PREMIUM MANAGEMENT ====================
+    
+    async def is_premium(self, user_id: int) -> bool:
+        """Check if user has premium"""
+        try:
+            user = await self.get_user(user_id)
+            if not user or not user.get("premium"):
+                return False
+            
+            # Check expiry
+            if user.get("premium_expiry"):
+                if user["premium_expiry"] < datetime.datetime.now():
+                    await self.remove_premium(user_id)
+                    return False
+            
+            return True
         except:
+            return False
+    
+    async def set_premium(self, user_id: int, days: int = 30):
+        """Set premium for user"""
+        try:
+            expiry = datetime.datetime.now() + datetime.timedelta(days=days)
+            await self.users.update_one(
+                {"user_id": user_id},
+                {"$set": {
+                    "premium": True,
+                    "premium_expiry": expiry
+                }}
+            )
+            return True
+        except Exception as e:
+            log.error(f"Error setting premium: {e}")
+            return False
+    
+    async def remove_premium(self, user_id: int):
+        """Remove premium from user"""
+        try:
+            await self.users.update_one(
+                {"user_id": user_id},
+                {"$set": {"premium": False, "premium_expiry": None}}
+            )
+            return True
+        except Exception as e:
+            log.error(f"Error removing premium: {e}")
+            return False
+    
+    # ==================== POINTS & STREAK ====================
+    
+    async def add_points(self, user_id: int, points: int):
+        """Add points to user"""
+        try:
+            await self.users.update_one(
+                {"user_id": user_id},
+                {"$inc": {"points": points}}
+            )
+            return True
+        except Exception as e:
+            log.error(f"Error adding points: {e}")
+            return False
+    
+    async def update_streak(self, user_id: int):
+        """Update daily streak"""
+        try:
+            user = await self.get_user(user_id)
+            if not user:
+                return False
+            
+            last_active = user.get("last_active")
+            today = datetime.datetime.now().date()
+            
+            if last_active and last_active.date() == today - datetime.timedelta(days=1):
+                # Consecutive day
+                new_streak = user.get("streak", 0) + 1
+                update = {
+                    "$set": {"streak": new_streak, "last_active": datetime.datetime.now()},
+                    "$inc": {"points": 10}  # Bonus for streak
+                }
+                
+                if new_streak > user.get("max_streak", 0):
+                    update["$set"]["max_streak"] = new_streak
+                
+                await self.users.update_one({"user_id": user_id}, update)
+                
+            elif not last_active or last_active.date() < today:
+                # New streak
+                await self.users.update_one(
+                    {"user_id": user_id},
+                    {"$set": {"streak": 1, "last_active": datetime.datetime.now()},
+                     "$inc": {"points": 5}}
+                )
+            return True
+        except Exception as e:
+            log.error(f"Error updating streak: {e}")
+            return False
+    
+    async def check_and_award(self, user_id: int):
+        """Check and award achievements"""
+        try:
+            user = await self.get_user(user_id)
+            if not user:
+                return False
+            
+            points = user.get("points", 0)
+            badges = user.get("badges", [])
+            new_badges = []
+            
+            if points >= 100 and "💪 Bronze" not in badges:
+                new_badges.append("💪 Bronze")
+            if points >= 500 and "🥈 Silver" not in badges:
+                new_badges.append("🥈 Silver")
+            if points >= 1000 and "🥇 Gold" not in badges:
+                new_badges.append("🥇 Gold")
+            if points >= 5000 and "👑 Platinum" not in badges:
+                new_badges.append("👑 Platinum")
+            
+            if new_badges:
+                await self.users.update_one(
+                    {"user_id": user_id},
+                    {"$push": {"badges": {"$each": new_badges}}}
+                )
+            return True
+        except Exception as e:
+            log.error(f"Error checking awards: {e}")
+            return False
+    
+    # ==================== USAGE TRACKING ====================
+    
+    async def inc_usage(self, user_id: int, type: str):
+        """Increment usage count"""
+        try:
+            today = datetime.datetime.now().date().isoformat()
+            field = f"usage.{type}.{today}"
+            
+            await self.users.update_one(
+                {"user_id": user_id},
+                {"$inc": {field: 1, "total_questions": 1}}
+            )
+            return True
+        except Exception as e:
+            log.error(f"Error incrementing usage: {e}")
+            return False
+    
+    async def get_usage(self, user_id: int, type: str) -> int:
+        """Get today's usage count"""
+        try:
+            user = await self.get_user(user_id)
+            if not user:
+                return 0
+            
+            today = datetime.datetime.now().date().isoformat()
+            return user.get("usage", {}).get(type, {}).get(today, 0)
+        except:
+            return 0
+    
+    async def inc_api_usage(self, user_id: int, api: str):
+        """Increment API usage"""
+        try:
+            today = datetime.datetime.now().date().isoformat()
+            field = f"api_usage.{today}.{api}"
+            
+            await self.users.update_one(
+                {"user_id": user_id},
+                {"$inc": {field: 1}}
+            )
+            return True
+        except Exception as e:
+            log.error(f"Error incrementing API usage: {e}")
+            return False
+    
+    async def get_api_usage(self, user_id: int) -> Dict:
+        """Get today's API usage"""
+        try:
+            user = await self.get_user(user_id)
+            if not user:
+                return {}
+            
+            today = datetime.datetime.now().date().isoformat()
+            return user.get("api_usage", {}).get(today, {})
+        except:
+            return {}
+    
+    # ==================== QUESTIONS HISTORY ====================
+    
+    async def save_q(self, user_id: int, question: str, answer: str, api_used: str):
+        """Save question-answer pair"""
+        try:
+            doc = {
+                "user_id": user_id,
+                "question": question[:200],
+                "answer": answer[:1000],
+                "api_used": api_used,
+                "timestamp": datetime.datetime.now()
+            }
+            await self.questions.insert_one(doc)
+            
+            # Update last active
+            await self.users.update_one(
+                {"user_id": user_id},
+                {"$set": {"last_active": datetime.datetime.now()}}
+            )
+            
+            # Update streak
+            await self.update_streak(user_id)
+            return True
+        except Exception as e:
+            log.error(f"Error saving question: {e}")
+            return False
+    
+    async def get_chat_history(self, user_id: int, limit: int = 20) -> List:
+        """Get user's chat history"""
+        try:
+            cursor = self.questions.find(
+                {"user_id": user_id}
+            ).sort("timestamp", -1).limit(limit)
+            return await cursor.to_list(length=limit)
+        except Exception as e:
+            log.error(f"Error getting chat history: {e}")
+            return []
+    
+    async def delete_chat_item(self, user_id: int, item_id: str):
+        """Delete a specific chat item"""
+        try:
+            await self.questions.delete_one({
+                "_id": ObjectId(item_id),
+                "user_id": user_id
+            })
+            return True
+        except Exception as e:
+            log.error(f"Error deleting chat item: {e}")
+            return False
+    
+    async def delete_chat_history(self, user_id: int):
+        """Delete all chat history for user"""
+        try:
+            await self.questions.delete_many({"user_id": user_id})
+            return True
+        except Exception as e:
+            log.error(f"Error deleting chat history: {e}")
+            return False
+    
+    # ==================== NOTES ====================
+    
+    async def save_note(self, user_id: int, title: str, content: str, source: str = "manual"):
+        """Save a note"""
+        try:
+            doc = {
+                "user_id": user_id,
+                "title": title[:100],
+                "content": content[:2000],
+                "source": source,
+                "timestamp": datetime.datetime.now()
+            }
+            result = await self.notes.insert_one(doc)
+            return str(result.inserted_id)
+        except Exception as e:
+            log.error(f"Error saving note: {e}")
             return ""
-
-# ==================== MIND MAP GENERATOR (Text-based) ====================
-
-async def generate_mindmap_text(topic: str, lang: str = "hi") -> str:
-    """Generate a text-based mind map (no images to save space)"""
-    system = "Create a text mind map. Format with indentation and symbols."
-    user = f"Create mind map for: {topic}"
     
-    answer, _ = await ask_ai(system, {"language": lang}, "mindmap")
+    async def get_user_notes(self, user_id: int) -> List:
+        """Get all notes for user"""
+        try:
+            cursor = self.notes.find(
+                {"user_id": user_id}
+            ).sort("timestamp", -1).limit(50)
+            return await cursor.to_list(length=50)
+        except Exception as e:
+            log.error(f"Error getting user notes: {e}")
+            return []
     
-    if answer and len(answer) > 20:
-        return answer
-    else:
-        # Fallback simple mind map
-        lines = [
-            f"🗺️ *Mind Map: {topic}*\n",
-            "└── 📌 Main Topic",
-            "    ├── 📖 Branch 1",
-            "    │   ├── Point 1",
-            "    │   ├── Point 2",
-            "    │   └── Point 3",
-            "    ├── 📚 Branch 2",
-            "    │   ├── Point 1",
-            "    │   ├── Point 2",
-            "    │   └── Point 3",
-            "    └── 📝 Branch 3",
-            "        ├── Point 1",
-            "        ├── Point 2",
-            "        └── Point 3"
-        ]
-        return "\n".join(lines)
-
-# ==================== IMAGE TO TEXT ====================
-
-async def image_to_text(image_path: str) -> str:
-    """Extract text from image using Gemini Vision"""
-    if not GEMINI_KEY:
-        return "Gemini API Key missing! Please set GEMINI_API_KEY environment variable."
+    async def get_note(self, user_id: int, note_id: str) -> Optional[Dict]:
+        """Get a specific note"""
+        try:
+            return await self.notes.find_one({
+                "_id": ObjectId(note_id),
+                "user_id": user_id
+            })
+        except Exception as e:
+            log.error(f"Error getting note: {e}")
+            return None
     
-    try:
-        # Read and encode image
-        with open(image_path, "rb") as f:
-            image_data = base64.b64encode(f.read()).decode()
-        
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_KEY}"
-        
-        payload = {
-            "contents": [{
-                "parts": [
-                    {"text": "Extract all text from this image. If it's a question, also solve it. If handwritten, transcribe it. Return text in same language as image."},
-                    {"inline_data": {"mime_type": "image/jpeg", "data": image_data}}
-                ]
-            }]
-        }
-        
-        async with httpx.AsyncClient(timeout=30) as client:
-            r = await client.post(url, json=payload)
-            if r.status_code == 200:
-                data = r.json()
-                return data["candidates"][0]["content"]["parts"][0]["text"]
-            else:
-                return f"❌ API Error: {r.status_code}"
-                
-    except Exception as e:
-        log.error(f"Image to text error: {e}")
-        return f"❌ Error: {str(e)}"
-
-# ==================== NEWS & UPDATES ====================
-
-async def fetch_updates(category: str = "all") -> str:
-    """Fetch live sarkari updates"""
-    try:
-        # Try Google News RSS first
-        search_queries = {
-            "all": "sarkari+result+india+2026",
-            "jobs": "sarkari+naukri+2026",
-            "results": "board+exam+result+2026",
-            "admit": "admit+card+2026",
-            "forms": "online+form+2026"
-        }
-        
-        query = search_queries.get(category, search_queries["all"])
-        url = f"https://news.google.com/rss/search?q={query}&hl=hi&gl=IN"
-        
-        async with httpx.AsyncClient(timeout=10) as client:
-            r = await client.get(url)
-            if r.status_code == 200:
-                # Simple parsing
-                import xml.etree.ElementTree as ET
-                root = ET.fromstring(r.text)
-                items = []
-                
-                for item in root.findall('.//item')[:6]:
-                    title = item.find('title')
-                    link = item.find('link')
-                    pubDate = item.find('pubDate')
-                    
-                    if title is not None and title.text:
-                        title_text = title.text
-                        link_text = link.text if link is not None else ""
-                        date_text = pubDate.text[:16] if pubDate is not None and pubDate.text else ""
-                        
-                        items.append(f"📌 *{title_text}*")
-                        if date_text:
-                            items.append(f"📅 {date_text}")
-                        if link_text:
-                            items.append(f"🔗 [Read more]({link_text})")
-                        items.append("")
-                
-                if items:
-                    return "\n".join(items)
-        
-        # Fallback to AI
-        return await ask_ai_simple(f"Latest {category} sarkari updates 2026. 5 items with dates.", mode="quick")
-        
-    except Exception as e:
-        log.error(f"Updates error: {e}")
-        return "❌ Updates fetch failed. Please try again."
-
-# ==================== QUESTION PAPER ====================
-
-async def generate_question_paper(subject: str, class_name: str, difficulty: str) -> str:
-    """Generate question paper using AI"""
-    prompt = f"""Create a {difficulty} difficulty question paper for {subject} - {class_name}.
-
-Format:
-Section A: 5 MCQ (1 mark each)
-Section B: 3 Short Answer (2 marks each)  
-Section C: 2 Long Answer (5 marks each)
-
-Total: 21 marks, Time: 1 hour
-
-Also provide answer key at the end.
-
-Use proper formatting with sections marked."""
+    async def delete_note(self, user_id: int, note_id: str):
+        """Delete a note"""
+        try:
+            await self.notes.delete_one({
+                "_id": ObjectId(note_id),
+                "user_id": user_id
+            })
+            return True
+        except Exception as e:
+            log.error(f"Error deleting note: {e}")
+            return False
     
-    return await ask_ai_simple(prompt, mode="quick")
-
-# ==================== STUDY PLANNER ====================
-
-async def generate_study_plan(subjects: str, exam_date: str, hours_per_day: int) -> str:
-    """Generate personalized study plan"""
-    try:
-        from datetime import datetime
-        exam = datetime.strptime(exam_date, "%Y-%m-%d")
-        today = datetime.now()
-        days_left = (exam - today).days
-        if days_left < 0:
-            days_left = 30  # default if past date
-    except:
-        days_left = 30
+    async def delete_all_notes(self, user_id: int):
+        """Delete all notes for user"""
+        try:
+            await self.notes.delete_many({"user_id": user_id})
+            return True
+        except Exception as e:
+            log.error(f"Error deleting all notes: {e}")
+            return False
     
-    prompt = f"""Create a {days_left}-day study plan for:
-Subjects: {subjects}
-Hours per day: {hours_per_day}
-
-Include:
-- Weekly schedule
-- Topic distribution
-- Revision days
-- Mock test days
-
-Make it practical and achievable. Use bullet points."""
+    # ==================== REMINDERS ====================
     
-    return await ask_ai_simple(prompt, mode="quick")
-
-# ==================== VOCABULARY BUILDER ====================
-
-async def build_vocabulary(topic: str, lang: str = "hi") -> str:
-    """Generate vocabulary list"""
-    prompt = f"""Create a vocabulary list for '{topic}'.
-
-Include 8 important words/phrases with:
-- Word
-- Meaning (in {'Hindi' if lang == 'hi' else 'English'})
-- Example sentence
-
-Format in a simple list."""
+    async def add_reminder(self, user_id: int, text: str, remind_at: datetime.datetime):
+        """Add a reminder"""
+        try:
+            doc = {
+                "user_id": user_id,
+                "text": text[:100],
+                "remind_at": remind_at,
+                "created": datetime.datetime.now(),
+                "sent": False
+            }
+            await self.reminders.insert_one(doc)
+            return True
+        except Exception as e:
+            log.error(f"Error adding reminder: {e}")
+            return False
     
-    return await ask_ai_simple(prompt, mode="quick")
-
-# ==================== CAREER COUNSELOR ====================
-
-async def career_counsel(skills: str, interests: str, education: str, lang: str = "hi") -> str:
-    """Generate career advice"""
-    prompt = f"""Career advice for:
-Skills: {skills}
-Interests: {interests}
-Education: {education}
-
-Suggest:
-1. Top 3 career options
-2. Required exams
-3. Next steps
-
-Answer in {'Hindi' if lang == 'hi' else 'English' if lang == 'en' else 'Hinglish'}."""
+    async def get_user_reminders(self, user_id: int) -> List:
+        """Get all reminders for user"""
+        try:
+            cursor = self.reminders.find({
+                "user_id": user_id,
+                "sent": False
+            }).sort("remind_at", 1)
+            return await cursor.to_list(length=20)
+        except Exception as e:
+            log.error(f"Error getting user reminders: {e}")
+            return []
     
-    return await ask_ai_simple(prompt, mode="quick")
-
-# ==================== CURRENT AFFAIRS ====================
-
-async def get_current_affairs(lang: str = "hi") -> str:
-    """Get current affairs"""
-    month = datetime.now().strftime("%B %Y")
-    prompt = f"India current affairs {month}. 8 important news items for students. Brief points."
+    async def get_due_reminders(self) -> List:
+        """Get all due reminders"""
+        try:
+            cursor = self.reminders.find({
+                "remind_at": {"$lte": datetime.datetime.now()},
+                "sent": False
+            })
+            return await cursor.to_list(length=100)
+        except Exception as e:
+            log.error(f"Error getting due reminders: {e}")
+            return []
     
-    return await ask_ai_simple(prompt, mode="quick")
-
-# ==================== TOPIC SUMMARY ====================
-
-async def summarize_topic(topic: str, lang: str = "hi") -> str:
-    """Summarize a topic"""
-    prompt = f"Summarize '{topic}' in 5 points. Include key facts and examples."
+    async def mark_reminder_sent(self, reminder_id: str):
+        """Mark reminder as sent"""
+        try:
+            await self.reminders.update_one(
+                {"_id": ObjectId(reminder_id)},
+                {"$set": {"sent": True}}
+            )
+            return True
+        except Exception as e:
+            log.error(f"Error marking reminder sent: {e}")
+            return False
     
-    return await ask_ai_simple(prompt, mode="quick")
+    # ==================== REFERRALS ====================
+    
+    async def add_referral(self, referrer_id: int, referred_id: int):
+        """Add a referral"""
+        try:
+            # Check if already referred
+            existing = await self.referrals.find_one({
+                "referrer_id": referrer_id,
+                "referred_id": referred_id
+            })
+            if existing:
+                return False
+            
+            # Add referral record
+            doc = {
+                "referrer_id": referrer_id,
+                "referred_id": referred_id,
+                "timestamp": datetime.datetime.now(),
+                "rewarded": False
+            }
+            await self.referrals.insert_one(doc)
+            
+            # Update referrer count
+            await self.users.update_one(
+                {"user_id": referrer_id},
+                {"$inc": {"ref_count": 1, "points": 100}}
+            )
+            
+            # Check for premium reward (20 referrals = 1 week premium)
+            referrer = await self.get_user(referrer_id)
+            if referrer and referrer.get("ref_count", 0) >= 20:
+                # Award 1 week premium
+                await self.set_premium(referrer_id, 7)
+                # Reset count after reward
+                await self.users.update_one(
+                    {"user_id": referrer_id},
+                    {"$set": {"ref_count": 0}}
+                )
+            
+            # Give points to referred user
+            await self.add_points(referred_id, 100)
+            
+            return True
+        except Exception as e:
+            log.error(f"Error adding referral: {e}")
+            return False
+    
+    async def get_referral_count(self, user_id: int) -> int:
+        """Get user's referral count"""
+        try:
+            user = await self.get_user(user_id)
+            return user.get("ref_count", 0) if user else 0
+        except:
+            return 0
+    
+    # ==================== FEEDBACK ====================
+    
+    async def save_feedback(self, user_id: int, rating: int, comment: str):
+        """Save user feedback"""
+        try:
+            doc = {
+                "user_id": user_id,
+                "rating": rating,
+                "comment": comment[:500],
+                "timestamp": datetime.datetime.now()
+            }
+            await self.feedback.insert_one(doc)
+            return True
+        except Exception as e:
+            log.error(f"Error saving feedback: {e}")
+            return False
+    
+    # ==================== EXAMS ====================
+    
+    async def set_exam(self, user_id: int, exam_name: str, exam_date: str):
+        """Set user's exam date"""
+        try:
+            date_obj = datetime.datetime.strptime(exam_date, "%Y-%m-%d")
+            await self.users.update_one(
+                {"user_id": user_id},
+                {"$set": {
+                    "exam_name": exam_name,
+                    "exam_date": date_obj
+                }}
+            )
+            return True
+        except Exception as e:
+            log.error(f"Error setting exam: {e}")
+            return False
+    
+    async def get_exam_reminders(self) -> List:
+        """Get users with exams approaching"""
+        try:
+            today = datetime.datetime.now()
+            reminders = []
+            
+            cursor = self.users.find({
+                "exam_date": {"$gte": today},
+                "notify_exam": True
+            })
+            
+            async for user in cursor:
+                days_left = (user["exam_date"] - today).days
+                if days_left in [1, 7, 30]:  # Remind on these days
+                    reminders.append({
+                        "user_id": user["user_id"],
+                        "exam_name": user.get("exam_name", "Exam"),
+                        "days_left": days_left
+                    })
+            
+            return reminders
+        except Exception as e:
+            log.error(f"Error getting exam reminders: {e}")
+            return []
+    
+    # ==================== STUDY PLAN ====================
+    
+    async def save_study_plan(self, user_id: int, plan: str, exam_date: str, subjects: str):
+        """Save study plan"""
+        try:
+            await self.users.update_one(
+                {"user_id": user_id},
+                {"$set": {
+                    "study_plan": {
+                        "plan": plan[:2000],
+                        "exam_date": exam_date,
+                        "subjects": subjects[:100],
+                        "created": datetime.datetime.now()
+                    }
+                }}
+            )
+            return True
+        except Exception as e:
+            log.error(f"Error saving study plan: {e}")
+            return False
+    
+    async def get_study_plan(self, user_id: int) -> Optional[Dict]:
+        """Get user's study plan"""
+        try:
+            user = await self.get_user(user_id)
+            return user.get("study_plan") if user else None
+        except:
+            return None
+    
+    # ==================== CACHE ====================
+    
+    async def set_cache(self, key: str, value: str, hours: int = 24):
+        """Set cache value"""
+        try:
+            expiry = datetime.datetime.now() + datetime.timedelta(hours=hours)
+            doc = {
+                "key": key,
+                "value": value,
+                "expiry": expiry
+            }
+            await self.cache.update_one(
+                {"key": key},
+                {"$set": doc},
+                upsert=True
+            )
+            return True
+        except Exception as e:
+            log.error(f"Error setting cache: {e}")
+            return False
+    
+    async def get_cache(self, key: str) -> Optional[str]:
+        """Get cache value"""
+        try:
+            doc = await self.cache.find_one({"key": key})
+            if doc and doc.get("expiry") > datetime.datetime.now():
+                return doc.get("value")
+            return None
+        except Exception as e:
+            log.error(f"Error getting cache: {e}")
+            return None
+    
+    async def del_cache(self, key: str):
+        """Delete cache"""
+        try:
+            await self.cache.delete_one({"key": key})
+            return True
+        except Exception as e:
+            log.error(f"Error deleting cache: {e}")
+            return False
+    
+    async def del_cache_prefix(self, prefix: str):
+        """Delete all cache with prefix"""
+        try:
+            await self.cache.delete_many({"key": {"$regex": f"^{prefix}"}})
+            return True
+        except Exception as e:
+            log.error(f"Error deleting cache prefix: {e}")
+            return False
+    
+    # ==================== LEADERBOARD ====================
+    
+    async def get_leaderboard(self, limit: int = 10) -> List:
+        """Get top users by points"""
+        try:
+            cursor = self.users.find(
+                {"blocked": False}
+            ).sort("points", -1).limit(limit)
+            return await cursor.to_list(length=limit)
+        except Exception as e:
+            log.error(f"Error getting leaderboard: {e}")
+            return []
+    
+    async def get_rank(self, user_id: int) -> int:
+        """Get user's rank"""
+        try:
+            user = await self.get_user(user_id)
+            if not user:
+                return 0
+            
+            points = user.get("points", 0)
+            count = await self.users.count_documents({
+                "blocked": False,
+                "points": {"$gt": points}
+            })
+            return count + 1
+        except:
+            return 0
+    
+    # ==================== DAILY CHALLENGE ====================
+    
+    async def challenge_done_today(self, user_id: int) -> bool:
+        """Check if user did daily challenge today"""
+        try:
+            user = await self.get_user(user_id)
+            if not user:
+                return False
+            
+            last_challenge = user.get("last_challenge")
+            if last_challenge:
+                return last_challenge.date() == datetime.datetime.now().date()
+            return False
+        except:
+            return False
+    
+    async def mark_challenge_done(self, user_id: int):
+        """Mark daily challenge as done"""
+        try:
+            await self.users.update_one(
+                {"user_id": user_id},
+                {"$set": {"last_challenge": datetime.datetime.now()}}
+            )
+            return True
+        except Exception as e:
+            log.error(f"Error marking challenge done: {e}")
+            return False
+    
+    # ==================== STATS ====================
+    
+    async def stats(self) -> Dict:
+        """Get bot statistics"""
+        try:
+            total = await self.users.count_documents({})
+            today_start = datetime.datetime.combine(
+                datetime.datetime.now().date(),
+                datetime.time.min
+            )
+            
+            active_today = await self.users.count_documents({
+                "last_active": {"$gte": today_start}
+            })
+            
+            new_today = await self.users.count_documents({
+                "joined": {"$gte": today_start}
+            })
+            
+            premium = await self.users.count_documents({"premium": True})
+            blocked = await self.users.count_documents({"blocked": True})
+            
+            questions = await self.questions.count_documents({})
+            notes_total = await self.notes.count_documents({})
+            
+            return {
+                "total": total,
+                "active_today": active_today,
+                "new_today": new_today,
+                "premium": premium,
+                "blocked": blocked,
+                "questions": questions,
+                "notes_total": notes_total
+            }
+        except Exception as e:
+            log.error(f"Error getting stats: {e}")
+            return {
+                "total": 0,
+                "active_today": 0,
+                "new_today": 0,
+                "premium": 0,
+                "blocked": 0,
+                "questions": 0,
+                "notes_total": 0
+            }
+    
+    # ==================== MORNING NOTIFICATIONS ====================
+    
+    async def morning_notify_users(self) -> List:
+        """Get users who want morning notifications"""
+        try:
+            cursor = self.users.find({
+                "notify_morning": True,
+                "blocked": False
+            })
+            return await cursor.to_list(length=1000)
+        except Exception as e:
+            log.error(f"Error getting morning notify users: {e}")
+            return []
+    
+    # ==================== ALL USERS ====================
+    
+    async def all_users(self) -> List:
+        """Get all users (for admin)"""
+        try:
+            cursor = self.users.find({})
+            return await cursor.to_list(length=10000)
+        except Exception as e:
+            log.error(f"Error getting all users: {e}")
+            return []
 
-# ==================== HELPER FUNCTIONS ====================
+# Create global database instance
+db = Database()
 
-def clean_markdown(text: str) -> str:
-    """Remove markdown formatting for plain text"""
-    if not text:
-        return text
-    # Remove bold/italic markers
-    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
-    text = re.sub(r'\*(.*?)\*', r'\1', text)
-    text = re.sub(r'__(.*?)__', r'\1', text)
-    text = re.sub(r'_(.*?)_', r'\1', text)
-    # Remove code blocks
-    text = re.sub(r'```.*?```', '', text, flags=re.DOTALL)
-    text = re.sub(r'`(.*?)`', r'\1', text)
-    # Remove links
-    text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
-    return text
-
-def truncate_text(text: str, max_length: int = 1000) -> str:
-    """Truncate text to max length"""
-    if len(text) <= max_length:
-        return text
-    return text[:max_length-3] + "..."
+# Export the db instance
+__all__ = ['db']
